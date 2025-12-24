@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperpro Sticker Generator</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Hyperpro Sticker Generator</h1>
+      <p class="subtitle">Search products and generate Zebra label files</p>
+    </header>
+
+    <main>
+      <section id="search-section">
+        <h2>Search Product</h2>
+        <input type="text" id="search-input" placeholder="Enter product code..." autocomplete="off">
+        <div id="search-results"></div>
+      </section>
+
+      <section id="preview-section" style="display: none;">
+        <h2>Preview Data</h2>
+        <table id="preview-table"></table>
+        <button id="generate-btn" class="btn-primary">Generate Sticker (.zbl)</button>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Hyperpro. Internal use only.</p>
+    </footer>
+  </div>
+
+  <script src="js/excel-parser.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/zbl-generator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

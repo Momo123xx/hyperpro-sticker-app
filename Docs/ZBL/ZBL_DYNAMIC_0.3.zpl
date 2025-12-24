@@ -1,0 +1,124 @@
+^XA
+^CI28
+^FX --- DIMENSIONS: 124mm x 70mm @ 300DPI ---
+^PW1465
+^LL827
+^LS0
+
+^FX --- MAIN OUTER BORDER ---
+^FO10,10^GB1445,807,4^FS
+
+^FX --- SECTION 1: HEADER (BRAND/TYPE/YEAR) ---
+^FX BRAND_NAME: Max ~80-100 chars, adaptive font size (30-50pt range)
+^FX MODEL_TYPE: Max 130 chars, 2-line wrap, adaptive font size (18-50pt range)
+^FX YEAR: Fixed position, standard font
+^FO10,10^GB1445,70,3^FS
+^FO10,80^GB1445,110,3^FS
+^FO10,190^GB1445,70,3^FS
+^FO450,10^GB3,250,3^FS
+
+^FX Header Text - Labels
+^CF0,28
+^FO30,35^FDbrand:^FS
+^FO30,120^FDTYPE:^FS
+^FO30,215^FDYEAR:^FS
+
+^FX Header Text - Brand Value (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Font sizing: 50pt (<=25 chars) | 40pt (25-40) | 35pt (40-60) | 30pt (60-80) | 25pt (80+)
+^CF0,{BRAND_FONT_SIZE}
+^FO450,30^FB1015,1,0,C^FD{BRAND_NAME}\&^FS
+
+^FX Header Text - Model Type (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Font sizing: 50pt (<=25) | 40pt (25-40) | 32pt (40-60) | 26pt (60-80) | 22pt (80-100) | 20pt (100-130) | 18pt (130+)
+^FX Constraint: 1015 dots width, 2-line wrap, max 130 chars
+^CF0,{MODEL_FONT_SIZE}
+^FO450,100^FB1015,2,0,C^FD{MODEL_TYPE}\&^FS
+
+^FX Header Text - Year Value
+^CF0,40
+^FO450,205^FB1015,1,0,C^FD{YEAR}\&^FS
+
+^FX --- SECTION 2: FRONT / REAR HEADERS ---
+^FO10,260^GB722,60,3^FS
+^FO732,260^GB723,60,3^FS
+^CF0,45
+^FO10,270^FB722,1,0,C^FDFRONT:\&^FS
+^FO732,270^FB723,1,0,C^FDREAR:\&^FS
+
+^FX --- SECTION 3: SPRINGS ---
+^FO10,320^GB722,60,3^FS
+^FO732,320^GB723,60,3^FS
+^FO350,320^GB3,60,3^FS
+^FO1050,320^GB3,60,3^FS
+
+^CF0,28
+^FO25,340^FDForkspring:^FS
+^FO350,340^FB372,1,0,C^FD{FORK_SPRING}\&^FS
+^FO747,340^FDShockspring:^FS
+^FO1050,340^FB395,1,0,C^FD{SHOCK_SPRING}\&^FS
+
+^FX --- SECTION 4: KIT & NOTES (DYNAMIC) ---
+^FO10,380^GB1445,55,3^FS
+^FO10,435^GB1445,55,3^FS
+
+^FX Kit Information (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Font sizing: 28pt (<=40 chars) | 26pt (40-60) | 24pt (60-80) | 22pt (80-100) | 20pt (100-120) | 18pt (120+)
+^CF0,{KIT_FONT_SIZE}
+^FO10,395^FB1445,1,0,C^FD{KIT_INFO}\&^FS
+
+^FX Notes Field (DYNAMIC - CHARACTER COUNT ADAPTIVE + TRUNCATION REQUIRED)
+^FX CRITICAL: Single-line constraint (NO wrapping)
+^FX Field width: 1445 dots (full label width)
+^FX Data sources: Column P (FORK EXTRA INFO) + Column V (REAR EXTRA INFO)
+^FX Combination logic: "F: {P_value}" | "R: {V_value}" | "F: {P_value} / R: {V_value}"
+^FX Font sizing: 24pt (<=60) | 22pt (60-80) | 20pt (80-100) | 18pt (100-120) | 16pt (120-140) | 14pt (140-170) | 12pt (170+)
+^FX Max safe length: ~120 chars (any longer requires truncation with "..." suffix)
+^FX Worst case: 184 chars (P) + 3 chars (sep) + 144 chars (V) + 6 chars (prefixes) = 337 chars EXCEEDS CAPACITY
+^FX Truncation strategy: Smart truncation or priority-based display (fork priority)
+^CF0,{NOTES_FONT_SIZE}
+^FO10,450^FB1445,1,0,C^FD{NOTES}\&^FS
+
+^FX --- SECTION 5: ADJUSTMENT HEADERS ---
+^FO10,490^GB722,55,3^FS
+^FO732,490^GB723,55,3^FS
+^CF0,35
+^FO10,505^FB722,1,0,C^FDFork Adjustments:\&^FS
+^FO732,505^FB723,1,0,C^FDShock Adjustments:\&^FS
+
+^FX --- SECTION 6: DATA TABLE ---
+^FO10,545^GB380,225,3^FS
+^FO390,545^GB342,225,3^FS
+^FO732,545^GB380,225,3^FS
+^FO1112,545^GB343,225,3^FS
+
+^FX Horizontal Grid Lines (Standardized to 3-dot height/thickness)
+^FO10,590^GB1445,3,3^FS
+^FO10,635^GB1445,3,3^FS
+^FO10,680^GB1445,3,3^FS
+^FO10,725^GB1445,3,3^FS
+
+^FX Data Content
+^CF0,24
+^FO10,560^FB380,1,0,C^FDHYPERPRO OIL\&^FS
+^FO390,560^FB342,1,0,C^FD{OIL_TYPE}\&^FS
+^FO10,605^FB380,1,0,C^FDOIL LEVEL\&^FS
+^FO390,605^FB342,1,0,C^FD{OIL_LEVEL}\&^FS
+^FO10,650^FB380,1,0,C^FDSPRING PRELOAD\&^FS
+^FO390,650^FB342,1,0,C^FD{FORK_PRELOAD}\&^FS
+^FO732,650^FB380,1,0,C^FDSPRING PRELOAD\&^FS
+^FO1112,650^FB343,1,0,C^FD{SHOCK_PRELOAD}\&^FS
+^FO10,695^FB380,1,0,C^FDSTATIC SAG\&^FS
+^FO390,695^FB342,1,0,C^FD{FORK_SAG}\&^FS
+^FO732,695^FB380,1,0,C^FDSTATIC SAG\&^FS
+^FO1112,695^FB343,1,0,C^FD{SHOCK_SAG}\&^FS
+^FO10,740^FB380,1,0,C^FDCOMPRESSION\&^FS
+^FO390,740^FB342,1,0,C^FD{FORK_COMPRESSION}\&^FS
+^FO732,740^FB380,1,0,C^FDCOMPRESSION\&^FS
+^FO1112,740^FB343,1,0,C^FD{SHOCK_COMPRESSION}\&^FS
+
+^FX --- SECTION 7: FOOTER LEGEND ---
+^FO10,770^GB1445,47,3^FS
+^CF0,20
+^FO10,785^FB1445,1,0,C^FDmm=millimeter, T=complete Turns(anti-clockwise), K=Klicks(anti-clockwise), P=Position, R=Rings(Visible)\&FS
+
+^XZ
