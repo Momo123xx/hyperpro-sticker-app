@@ -15,17 +15,83 @@
     </header>
 
     <main>
-      <section id="search-section">
-        <h2>Search Product</h2>
-        <input type="text" id="search-input" placeholder="Enter product code..." autocomplete="off">
-        <div id="search-results"></div>
-      </section>
+      <div class="main-layout">
+        <!-- Left Column: Search & Preview -->
+        <div class="left-column">
+          <section id="search-section">
+            <h2>Search Product</h2>
+            <input type="text" id="search-input" placeholder="Enter product code..." autocomplete="off">
+            <div id="search-results"></div>
+          </section>
 
-      <section id="preview-section" style="display: none;">
-        <h2>Preview Data</h2>
-        <table id="preview-table"></table>
-        <button id="generate-btn" class="btn-primary">Generate Sticker (.zbl)</button>
-      </section>
+          <section id="preview-section" style="display: none;">
+            <h2>Preview Data</h2>
+            <table id="preview-table"></table>
+
+            <!-- Add to Cart Controls -->
+            <div class="add-to-cart-controls">
+              <div class="control-group">
+                <label for="kit-type-select">Kit Type:</label>
+                <select id="kit-type-select">
+                  <option value="fork">Fork Kit (1 BIG + 2 SMALL Fork)</option>
+                  <option value="shock">Shock Kit (1 BIG + 1 SMALL Shock)</option>
+                  <option value="combi">Combi Kit (1 BIG + 2 SMALL Fork + 1 SMALL Shock)</option>
+                </select>
+              </div>
+
+              <div class="control-group">
+                <label for="quantity-input">Quantity:</label>
+                <input type="number" id="quantity-input" min="1" value="1">
+              </div>
+
+              <button id="add-to-cart-btn" class="btn-primary">Add to Batch</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column: Cart Sidebar -->
+        <aside class="cart-sidebar">
+          <div class="cart-header">
+            <h2>Print Batch</h2>
+            <button id="clear-cart-btn" class="btn-secondary">Clear All</button>
+          </div>
+
+          <div id="cart-items-container" class="cart-items">
+            <!-- Cart items will be rendered here -->
+            <div class="empty-cart-message">
+              <p>Your batch is empty</p>
+              <p class="hint">Search and add products to start building your print batch</p>
+            </div>
+          </div>
+
+          <div class="cart-summary">
+            <div class="summary-row">
+              <span>Total Items:</span>
+              <span id="total-items">0</span>
+            </div>
+            <div class="summary-row">
+              <span>Total BIG Labels:</span>
+              <span id="total-big">0</span>
+            </div>
+            <div class="summary-row">
+              <span>Total SMALL Labels:</span>
+              <span id="total-small">0</span>
+            </div>
+          </div>
+
+          <div class="cart-actions">
+            <button id="download-big-btn" class="btn-download" disabled>
+              Download BIG Stickers (.zpl)
+            </button>
+            <button id="download-small-btn" class="btn-download" disabled>
+              Download SMALL Stickers (.zpl)
+            </button>
+            <button id="download-both-btn" class="btn-download-both" disabled>
+              Download Both Files
+            </button>
+          </div>
+        </aside>
+      </div>
     </main>
 
     <footer>
@@ -36,6 +102,8 @@
   <script src="js/excel-parser.js"></script>
   <script src="js/search.js"></script>
   <script src="js/zbl-generator.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/batch-generator.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

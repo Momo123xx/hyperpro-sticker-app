@@ -43,6 +43,10 @@ class ZBLGenerator {
     vars.MODEL_FONT_SIZE = this.calculateModelFontSize(vars.MODEL_TYPE);
     vars.KIT_FONT_SIZE = this.calculateKitFontSize(vars);
 
+    // Calculate small font sizes for small stickers
+    vars.BRAND_FONT_SIZE_SMALL = this.calculateBrandFontSizeSmall(vars.BRAND_NAME);
+    vars.MODEL_FONT_SIZE_SMALL = this.calculateModelFontSizeSmall(vars.MODEL_TYPE);
+
     // Combine notes field
     vars.NOTES = this.combineNotes(rowData.P, rowData.V);
     vars.NOTES_FONT_SIZE = this.calculateNotesFontSize(vars.NOTES);
@@ -68,6 +72,26 @@ class ZBLGenerator {
     if (len <= 100) return 22;
     if (len <= 130) return 20;
     return 18;
+  }
+
+  calculateBrandFontSizeSmall(text) {
+    const len = text.length;
+    if (len <= 20) return 35;
+    if (len <= 30) return 30;
+    if (len <= 50) return 25;
+    if (len <= 70) return 22;
+    return 18;
+  }
+
+  calculateModelFontSizeSmall(text) {
+    const len = text.length;
+    if (len <= 20) return 35;
+    if (len <= 30) return 30;
+    if (len <= 50) return 24;
+    if (len <= 70) return 20;
+    if (len <= 90) return 18;
+    if (len <= 120) return 16;
+    return 14;
   }
 
   calculateKitFontSize(vars) {
