@@ -1,0 +1,127 @@
+^XA
+^CI28
+^FX --- DIMENSIONS: 65mm x 35mm @ 300DPI ---
+^FX --- SMALL SHOCK STICKER VARIANT ---
+^FX --- 768 x 413 dots (20-dot safety margins) ---
+^PW768
+^LL413
+^LS0
+
+^FX --- MAIN OUTER BORDER (20-dot margins) ---
+^FO20,20^GB728,373,3^FS
+
+^FX ============================================================
+^FX ROW 1: BRAND - Y: 20-70 (50 dots)
+^FX ============================================================
+^FO20,20^GB728,50,2^FS
+^FO20,20^GB0,50,2^FS
+^FO235,20^GB0,50,2^FS
+^FO748,20^GB0,50,2^FS
+
+^FX Row 1: Label
+^CF0,18
+^FO25,35^FDBrand:^FS
+
+^FX Row 1: Value (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Font sizing: 32pt (<=12 chars) | 26pt (12-20) | 22pt (20-30) | 20pt (30+)
+^CF0,{BRAND_FONT_SIZE_SMALL}
+^FO240,30^FB503,1,0,L^FD{BRAND_NAME}\&^FS
+
+^FX ============================================================
+^FX ROW 2: MODEL TYPE - Y: 70-140 (70 dots, 2-line wrap)
+^FX ============================================================
+^FO20,70^GB728,70,2^FS
+^FO20,70^GB0,70,2^FS
+^FO235,70^GB0,70,2^FS
+^FO748,70^GB0,70,2^FS
+
+^FX Row 2: Label
+^CF0,18
+^FO25,95^FDType:^FS
+
+^FX Row 2: Value (DYNAMIC - CHARACTER COUNT ADAPTIVE, 2-LINE WRAP)
+^FX Font sizing: 28pt (<=15) | 24pt (15-25) | 20pt (25-40) | 18pt (40-60) | 16pt (60+)
+^CF0,{MODEL_FONT_SIZE_SMALL}
+^FO240,80^FB503,2,0,L^FD{MODEL_TYPE}\&^FS
+
+^FX ============================================================
+^FX ROW 3: YEAR - Y: 140-185 (45 dots)
+^FX ============================================================
+^FO20,140^GB728,45,2^FS
+^FO20,140^GB0,45,2^FS
+^FO235,140^GB0,45,2^FS
+^FO748,140^GB0,45,2^FS
+
+^FX Row 3: Label
+^CF0,18
+^FO25,153^FDYear:^FS
+
+^FX Row 3: Value
+^CF0,24
+^FO240,148^FB503,1,0,L^FD{YEAR}\&^FS
+
+^FX ============================================================
+^FX ROW 4: OIL TYPE - Y: 185-235 (50 dots)
+^FX ============================================================
+^FO20,185^GB728,50,2^FS
+^FO20,185^GB0,50,2^FS
+^FO235,185^GB0,50,2^FS
+^FO748,185^GB0,50,2^FS
+
+^FX Row 4: Label
+^CF0,18
+^FO25,200^FDOil Type:^FS
+
+^FX Row 4: Value
+^CF0,20
+^FO240,198^FB503,1,0,L^FD{OIL_TYPE}\&^FS
+
+^FX ============================================================
+^FX ROW 5: OIL LEVEL - Y: 235-285 (50 dots)
+^FX ============================================================
+^FO20,235^GB728,50,2^FS
+^FO20,235^GB0,50,2^FS
+^FO235,235^GB0,50,2^FS
+^FO748,235^GB0,50,2^FS
+
+^FX Row 5: Label
+^CF0,18
+^FO25,250^FDOil Level:^FS
+
+^FX Row 5: Value
+^CF0,20
+^FO240,248^FB503,1,0,L^FD{OIL_LEVEL}\&^FS
+
+^FX ============================================================
+^FX ROW 6: SHOCK KIT CODE - Y: 285-335 (50 dots)
+^FX ============================================================
+^FO20,285^GB728,50,2^FS
+^FO20,285^GB0,50,2^FS
+^FO235,285^GB0,50,2^FS
+^FO748,285^GB0,50,2^FS
+
+^FX Row 6: Label
+^CF0,18
+^FO25,300^FDShock Kit:^FS
+
+^FX Row 6: Value
+^CF0,22
+^FO240,296^FB503,1,0,L^FD{SHOCKCODE}\&^FS
+
+^FX ============================================================
+^FX ROW 7: SHOCK SPRING - Y: 335-385 (50 dots)
+^FX ============================================================
+^FO20,335^GB728,50,2^FS
+^FO20,335^GB0,50,2^FS
+^FO235,335^GB0,50,2^FS
+^FO748,335^GB0,50,2^FS
+
+^FX Row 7: Label
+^CF0,18
+^FO25,350^FDShock Spring:^FS
+
+^FX Row 7: Value
+^CF0,20
+^FO240,348^FB503,1,0,L^FD{SHOCK_SPRING}\&^FS
+
+^XZ

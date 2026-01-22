@@ -208,13 +208,41 @@ To modify the label format:
 
 ## Future Enhancements
 
-Potential improvements for future versions:
+### Phase 1: Quick Wins (No Infrastructure Changes)
 
-1. **Multiple Template Support**: Select between different label formats
-2. **Excel Upload**: Allow users to upload new product files
-3. **Visual Label Preview**: Show label appearance before generating
-4. **Batch Generation**: Generate multiple labels at once
-5. **Export History**: Track previously generated labels
+These improvements maintain the current simple deployment model and can be implemented quickly:
+
+1. **Multiple Template Support**: Select between different label formats using a dropdown selector
+2. **Excel Upload Feature**: Allow users to upload new product files directly through the interface instead of replacing server files
+3. **Data Validation & Quality Checks**: Automatically detect and highlight missing or incomplete data fields, validate Excel file structure on load, and provide data completeness warnings before label generation
+4. **Label Generation Enhancements**: Manual font size adjustments, field length warnings, template validation, and improved handling of special characters
+5. **Workflow Efficiency Improvements**: Keyboard shortcuts for faster navigation, session memory to restore last search, quick regenerate functionality, and duplicate generation detection
+6. **Batch Download Operations**: Multi-select products from search results, generate multiple labels at once, and download as organized ZIP files
+
+### Phase 2: Enhanced Features (More Development Effort)
+
+These features are achievable with the current architecture but require more development time:
+
+7. **Export History with Reprint**: Track previously generated labels with timestamps and reprint capability
+   - *Note: History stored locally in browser; not shared across users or devices*
+
+8. **Visual Label Preview**: Show label appearance before generating
+   - *Note: Requires ZPL rendering library; alternatively can show template with substituted values (simpler implementation)*
+
+### Phase 3: Advanced Features (Requires Architecture Decisions)
+
+These features would require changes to the deployment model or additional infrastructure:
+
+9. **Direct Printer Communication**: Send print commands directly to configured network printers without manual file transfer
+   - *Technical requirement: Would need desktop application (Electron), browser extension, or local print server middleware*
+   - *Alternative: Continue with manual file transfer or batch ZIP download*
+
+10. **Printer Output Testing & Validation**: Automated testing of .zbl label output from deployed label printers
+    - *Note: This is primarily a manual QA process requiring physical printer access; app can provide test label templates and validation checklists*
+
+### Recommendation
+
+**Start with Phase 1 items** for immediate productivity gains while maintaining simple deployment. Evaluate Phase 2 based on user feedback. Phase 3 items should be considered only if the workflow efficiency gains justify the increased technical complexity.
 
 ## Support
 
