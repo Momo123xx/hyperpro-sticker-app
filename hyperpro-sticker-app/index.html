@@ -24,27 +24,38 @@
             <div id="search-results"></div>
           </section>
 
+          <section id="bulk-paste-section">
+            <h2>Bulk Add from Excel</h2>
+            <p class="bulk-hint">Paste from Excel: Column A = Product Code, Column B = Quantity</p>
+            <textarea id="bulk-paste-input"
+                      placeholder="Paste tab-separated values from Excel here..."
+                      rows="6"></textarea>
+            <button id="bulk-process-btn" class="btn-primary">Process Bulk Paste</button>
+            <div id="bulk-results"></div>
+          </section>
+
           <section id="preview-section" style="display: none;">
-            <h2>Preview Data</h2>
-            <table id="preview-table"></table>
+            <h2>Product Details</h2>
 
-            <!-- Add to Cart Controls -->
-            <div class="add-to-cart-controls">
-              <div class="control-group">
-                <label for="kit-type-select">Kit Type:</label>
-                <select id="kit-type-select">
-                  <option value="fork">Fork Kit (1 BIG + 2 SMALL Fork)</option>
-                  <option value="shock">Shock Kit (1 BIG + 1 SMALL Shock)</option>
-                  <option value="combi">Combi Kit (1 BIG + 2 SMALL Fork + 1 SMALL Shock)</option>
-                </select>
-              </div>
+            <!-- Summary (always visible) -->
+            <table class="preview-summary">
+              <tbody id="preview-table-summary">
+                <!-- Populated by JS: Brand, Model, Year -->
+              </tbody>
+            </table>
 
-              <div class="control-group">
-                <label for="quantity-input">Quantity:</label>
-                <input type="number" id="quantity-input" min="1" value="1">
-              </div>
+            <!-- Collapsible details toggle -->
+            <button id="preview-details-toggle" class="details-toggle">
+              <span class="toggle-icon">▼</span> Show All Details
+            </button>
 
-              <button id="add-to-cart-btn" class="btn-primary">Add to Batch</button>
+            <!-- Detailed specifications (collapsible) -->
+            <div id="preview-details" class="preview-details" style="display: none;">
+              <table class="preview-details-table">
+                <tbody id="preview-table-details">
+                  <!-- Populated by JS: remaining 14 fields -->
+                </tbody>
+              </table>
             </div>
           </section>
         </div>
@@ -60,7 +71,7 @@
             <!-- Cart items will be rendered here -->
             <div class="empty-cart-message">
               <p>Your batch is empty</p>
-              <p class="hint">Search and add products to start building your print batch</p>
+              <p class="hint">Use Enter key or bulk paste to add products</p>
             </div>
           </div>
 
@@ -70,11 +81,11 @@
               <span id="total-items">0</span>
             </div>
             <div class="summary-row">
-              <span>Total BIG Labels:</span>
+              <span>124 x 70 mm:</span>
               <span id="total-big">0</span>
             </div>
             <div class="summary-row">
-              <span>Total SMALL Labels:</span>
+              <span>65 x 35 mm:</span>
               <span id="total-small">0</span>
             </div>
           </div>
@@ -87,7 +98,7 @@
               Download SMALL Stickers (.zpl)
             </button>
             <button id="download-both-btn" class="btn-download-both" disabled>
-              Download Both Files
+              Download All
             </button>
           </div>
         </aside>

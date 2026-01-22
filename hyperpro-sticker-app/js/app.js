@@ -61,7 +61,6 @@ async function initializeApp() {
 
 function setupEventListeners() {
   const searchInput = document.getElementById('search-input');
-  const addToCartBtn = document.getElementById('add-to-cart-btn');
   const clearCartBtn = document.getElementById('clear-cart-btn');
   const downloadBigBtn = document.getElementById('download-big-btn');
   const downloadSmallBtn = document.getElementById('download-small-btn');
@@ -77,8 +76,13 @@ function setupEventListeners() {
     }, 300);
   });
 
-  // Add to cart button
-  addToCartBtn.addEventListener('click', handleAddToCart);
+  // Enter key handler for instant add
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearchEnter(e.target.value);
+    }
+  });
 
   // Clear cart button
   clearCartBtn.addEventListener('click', handleClearCart);
@@ -87,6 +91,26 @@ function setupEventListeners() {
   downloadBigBtn.addEventListener('click', () => handleDownloadBig());
   downloadSmallBtn.addEventListener('click', () => handleDownloadSmall());
   downloadBothBtn.addEventListener('click', () => handleDownloadBoth());
+
+  // Bulk paste button
+  const bulkProcessBtn = document.getElementById('bulk-process-btn');
+  bulkProcessBtn.addEventListener('click', processBulkPaste);
+
+  // Preview details toggle
+  const detailsToggle = document.getElementById('preview-details-toggle');
+  detailsToggle.addEventListener('click', () => {
+    const detailsPanel = document.getElementById('preview-details');
+    const toggleBtn = document.getElementById('preview-details-toggle');
+    const isVisible = detailsPanel.style.display !== 'none';
+
+    if (isVisible) {
+      detailsPanel.style.display = 'none';
+      toggleBtn.innerHTML = '<span class="toggle-icon">▼</span> Show All Details';
+    } else {
+      detailsPanel.style.display = 'block';
+      toggleBtn.innerHTML = '<span class="toggle-icon">▲</span> Hide Details';
+    }
+  });
 }
 
 function displaySearchResults(results) {
@@ -126,15 +150,20 @@ function displaySearchResults(results) {
 }
 
 function displayPreview(rowData) {
-  const previewData = {
+  // Summary fields (always visible)
+  const summaryData = {
     'Brand Name': rowData.F || 'N/A',
     'Model Type': rowData.G || 'N/A',
-    'Year': rowData.H || 'N/A',
-    'Fork Spring': rowData.I || 'N/A',
-    'Shock Spring': rowData.Q || 'N/A',
+    'Year': rowData.H || 'N/A'
+  };
+
+  // Detailed fields (collapsible)
+  const detailsData = {
     'Fork Code': rowData.C || 'NONE',
     'Shock Code': rowData.D || 'NONE',
     'Combi Code': rowData.E || 'NONE',
+    'Fork Spring': rowData.I || 'N/A',
+    'Shock Spring': rowData.Q || 'N/A',
     'Oil Type': rowData.J || 'N/A',
     'Oil Level': rowData.K || 'N/A',
     'Fork Preload': rowData.L || 'N/A',
@@ -147,9 +176,9 @@ function displayPreview(rowData) {
     'Rear Extra Info': rowData.V || ''
   };
 
-  // Build HTML table
-  const table = document.getElementById('preview-table');
-  table.innerHTML = Object.entries(previewData)
+  // Populate summary table
+  const summaryTable = document.getElementById('preview-table-summary');
+  summaryTable.innerHTML = Object.entries(summaryData)
     .map(([key, value]) => `
       <tr>
         <td class="label">${key}:</td>
@@ -157,7 +186,108 @@ function displayPreview(rowData) {
       </tr>
     `).join('');
 
-  return previewData;
+  // Populate details table
+  const detailsTable = document.getElementById('preview-table-details');
+  detailsTable.innerHTML = Object.entries(detailsData)
+    .map(([key, value]) => `
+      <tr>
+        <td class="label">${key}:</td>
+        <td class="value">${value}</td>
+      </tr>
+    `).join('');
+
+  // Reset to collapsed state
+  document.getElementById('preview-details').style.display = 'none';
+  document.getElementById('preview-details-toggle').innerHTML =
+    '<span class="toggle-icon">▼</span> Show All Details';
+}
+
+function handleSearchEnter(query) {
+  const result = productSearch.searchExact(query);
+
+  if (result) {
+    const { match, kitType } = result;
+
+    // Add to cart with auto-detected kit type
+    cart.addToCart(match, kitType, 1);
+
+    // Get product code for toast message
+    const productCode = match.C || match.D || match.E || 'Product';
+    const kitInfo = Cart.getKitTypeInfo(kitType);
+    showToast(`Added ${productCode} (${kitInfo.name}) to batch`, 'success');
+
+    // Clear search
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-results').innerHTML = '';
+  } else {
+    showToast('No exact match found', 'error');
+  }
+}
+
+function parseBulkPaste(text) {
+  const lines = text.split('\n').filter(line => line.trim().length > 0);
+  const parsed = [];
+
+  lines.forEach((line, index) => {
+    const cells = line.split('\t');
+    const productCode = (cells[0] || '').trim();
+    const quantity = parseInt(cells[1]) || 1; // Default to 1 if missing
+
+    if (productCode.length > 0 && quantity >= 1) {
+      parsed.push({ productCode, quantity, lineNum: index + 1 });
+    }
+  });
+
+  return parsed;
+}
+
+function processBulkPaste() {
+  const textarea = document.getElementById('bulk-paste-input');
+  const text = textarea.value;
+  const resultsDiv = document.getElementById('bulk-results');
+
+  if (!text.trim()) {
+    showToast('No data to process', 'error');
+    return;
+  }
+
+  const parsed = parseBulkPaste(text);
+  const errors = [];
+  let successCount = 0;
+
+  parsed.forEach(item => {
+    const result = productSearch.searchExact(item.productCode);
+
+    if (result) {
+      const { match, kitType } = result;
+      cart.addToCart(match, kitType, item.quantity);
+      successCount++;
+    } else {
+      errors.push(`Line ${item.lineNum}: "${item.productCode}" not found`);
+    }
+  });
+
+  // Display results
+  let resultHTML = `<div class="bulk-success">✓ Successfully added ${successCount} items</div>`;
+
+  if (errors.length > 0) {
+    resultHTML += `<div class="bulk-error">⚠ ${errors.length} errors:</div>`;
+    resultHTML += `<ul class="bulk-error-list">`;
+    errors.forEach(err => {
+      resultHTML += `<li>${err}</li>`;
+    });
+    resultHTML += `</ul>`;
+  }
+
+  resultsDiv.innerHTML = resultHTML;
+
+  // Clear textarea if all successful
+  if (errors.length === 0) {
+    textarea.value = '';
+  }
+
+  showToast(`Bulk paste: ${successCount} added, ${errors.length} errors`,
+            errors.length === 0 ? 'success' : 'info');
 }
 
 function showLoading(message) {
@@ -200,32 +330,20 @@ function renderCartItems() {
     container.innerHTML = `
       <div class="empty-cart-message">
         <p>Your batch is empty</p>
-        <p class="hint">Search and add products to start building your print batch</p>
+        <p class="hint">Use Enter key or bulk paste to add products</p>
       </div>
     `;
     return;
   }
 
   container.innerHTML = items.map(item => {
-    const stickers = cart.calculateItemStickers(item);
-    const kitInfo = Cart.getKitTypeInfo(item.kitType);
+    const productCode = item.productCode || 'N/A';
 
     return `
-      <div class="cart-item" data-item-id="${item.id}">
-        <div class="cart-item-header">
-          <div class="cart-item-info">
-            <div class="cart-item-code">${item.productCode}</div>
-            <div class="cart-item-name">${item.productName}</div>
-          </div>
-          <button class="cart-item-remove" data-item-id="${item.id}" title="Remove item">×</button>
-        </div>
-        <div class="cart-item-details">
-          <span class="kit-badge ${kitInfo.color}">${kitInfo.name}</span>
-          <span class="cart-item-quantity">Qty: ${item.quantity}</span>
-        </div>
-        <div class="cart-item-breakdown">
-          → ${stickers.big} BIG + ${stickers.smallFork + stickers.smallShock} SMALL stickers
-        </div>
+      <div class="cart-item-simple" data-item-id="${item.id}">
+        <span class="cart-item-code">${productCode}</span>
+        <span class="cart-item-qty">Qty: ${item.quantity}</span>
+        <button class="cart-item-remove" data-item-id="${item.id}" title="Remove">×</button>
       </div>
     `;
   }).join('');
@@ -252,35 +370,6 @@ function updateDownloadButtons() {
   document.getElementById('download-big-btn').disabled = isEmpty;
   document.getElementById('download-small-btn').disabled = isEmpty;
   document.getElementById('download-both-btn').disabled = isEmpty;
-}
-
-function handleAddToCart() {
-  if (!currentRowData) {
-    showToast('Please select a product first', 'error');
-    return;
-  }
-
-  const kitType = document.getElementById('kit-type-select').value;
-  const quantity = parseInt(document.getElementById('quantity-input').value);
-
-  if (quantity < 1) {
-    showToast('Quantity must be at least 1', 'error');
-    return;
-  }
-
-  try {
-    cart.addToCart(currentRowData, kitType, quantity);
-
-    const productCode = currentRowData.C || currentRowData.D || currentRowData.E || 'Product';
-    const kitInfo = Cart.getKitTypeInfo(kitType);
-    showToast(`Added ${quantity}x ${kitInfo.name} to batch`, 'success');
-
-    // Reset quantity to 1
-    document.getElementById('quantity-input').value = 1;
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    showToast('Failed to add item to cart', 'error');
-  }
 }
 
 function handleRemoveItem(itemId) {
