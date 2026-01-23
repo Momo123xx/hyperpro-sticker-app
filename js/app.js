@@ -49,6 +49,9 @@ async function initializeApp() {
     cart = new Cart();
     cart.addListener(updateCartUI);
 
+    // Render cart UI immediately if there are items from previous session
+    updateCartUI();
+
     // Set up event listeners
     setupEventListeners();
 
@@ -282,14 +285,51 @@ function displaySearchResults(results) {
       return;
     }
 
+    // Get current search query to determine which column matched
+    const searchInput = document.getElementById('search-input');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
     container.innerHTML = results.map((row, index) => {
-      const code = SecurityUtils.escapeHtml(row.C || row.D || row.E || 'N/A');
+      // Determine which code column matched the search
+      let code = '';
+      let matchedColumn = '';
+
+      const cValue = (row.C || '').toString();
+      const dValue = (row.D || '').toString();
+      const eValue = (row.E || '').toString();
+
+      // Check which column contains the search query (prioritize exact matches)
+      if (cValue.toLowerCase() === query) {
+        code = cValue;
+        matchedColumn = 'C';
+      } else if (dValue.toLowerCase() === query) {
+        code = dValue;
+        matchedColumn = 'D';
+      } else if (eValue.toLowerCase() === query) {
+        code = eValue;
+        matchedColumn = 'E';
+      } else if (cValue.toLowerCase().includes(query)) {
+        code = cValue;
+        matchedColumn = 'C';
+      } else if (dValue.toLowerCase().includes(query)) {
+        code = dValue;
+        matchedColumn = 'D';
+      } else if (eValue.toLowerCase().includes(query)) {
+        code = eValue;
+        matchedColumn = 'E';
+      } else {
+        // Fallback to first available code
+        code = cValue || dValue || eValue || 'N/A';
+        matchedColumn = cValue ? 'C' : (dValue ? 'D' : 'E');
+      }
+
+      const escapedCode = SecurityUtils.escapeHtml(code);
       const brand = SecurityUtils.escapeHtml(row.F || 'N/A');
       const model = SecurityUtils.escapeHtml(row.G || 'N/A');
 
       return `
-        <div class="result-item" data-index="${index}">
-          <strong>${code}</strong> - ${brand} ${model}
+        <div class="result-item" data-index="${index}" data-matched-column="${matchedColumn}">
+          <strong>${escapedCode}</strong> - ${brand} ${model}
         </div>
       `;
     }).join('');
@@ -299,9 +339,17 @@ function displaySearchResults(results) {
       item.addEventListener('click', () => {
         try {
           const rowData = results[index];
-          const code = rowData.C || rowData.D || rowData.E || '';
+          const matchedColumn = item.dataset.matchedColumn;
 
-          // Fill search input with product code
+          // Use ONLY the matched column's code (no fallback to prevent wrong kit selection)
+          const code = (rowData[matchedColumn] || '').toString().trim();
+
+          if (!code) {
+            console.error('No code found in matched column:', matchedColumn);
+            return;
+          }
+
+          // Fill search input with the matched product code
           const searchInput = document.getElementById('search-input');
           if (searchInput) {
             searchInput.value = code;
@@ -618,7 +666,7 @@ function updateCartSummary() {
     const totalBig = document.getElementById('total-big');
     const totalSmall = document.getElementById('total-small');
 
-    if (totalItems) totalItems.textContent = summary.totalItems;
+    if (totalItems) totalItems.textContent = summary.totalJobs;
     if (totalBig) totalBig.textContent = summary.totalBig;
     if (totalSmall) totalSmall.textContent = summary.totalSmall;
   } catch (error) {

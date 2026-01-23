@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIG Label Template Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .test-case {
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 30px;
+            background: #fafafa;
+        }
+
+        .test-case h2 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .test-info {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .test-info strong {
+            color: #333;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        .test-info div {
+            margin-bottom: 8px;
+        }
+
+        .preview-container {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .preview-container img {
+            border: 1px solid #ddd;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #d32f2f;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .stats {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .stats h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .copy-btn {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #1e3a6e;
+        }
+
+        .zpl-preview {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ BIG Label Template Verification</h1>
+        <p class="subtitle">Testing ZPL template with edge cases - 124mm x 70mm @ 300 DPI</p>
+
+        <div class="stats">
+            <h3>📊 Test Coverage</h3>
+            <p>✓ Normal case with typical data</p>
+            <p>✓ Very long brand name (80+ characters)</p>
+            <p>✓ Very long model type (130+ characters)</p>
+            <p>✓ Long notes field (200+ characters)</p>
+            <p>✓ Missing optional fields (NONE/N/A)</p>
+            <p>✓ Special characters (ZPL escaping test)</p>
+            <p>✓ All 3 kit types (fork, shock, combi)</p>
+        </div>
+
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        // ============ ZPL TEMPLATE ============
+        const BIG_TEMPLATE = `^XA
+^CI28
+^FX --- DIMENSIONS: 124mm x 70mm @ 300DPI ---
+^FX --- VERSION 0.5: Fixed footer text clipping ---
+^FX --- CHANGES: Abbreviated text (anti-clockwise->CCW) to prevent overlap ---
+^PW1465
+^LL827
+^LS0
+
+^FX --- MAIN OUTER BORDER ---
+^FO10,10^GB1445,807,4^FS
+
+^FX ============================================================
+^FX SECTION 1: HEADER (BRAND/TYPE/YEAR) - Y: 10-260 (250 dots)
+^FX ============================================================
+^FX BRAND_NAME: Max ~80-100 chars, adaptive font size (25-50pt range)
+^FX MODEL_TYPE: Max 130 chars, 2-line wrap, adaptive font size (18-50pt range)
+^FX YEAR: Fixed position, standard font
+
+^FX Header Boxes
+^FO10,10^GB1445,70,3^FS
+^FO10,80^GB1445,110,3^FS
+^FO10,190^GB1445,70,3^FS
+^FO450,10^GB3,250,3^FS
+
+^FX Header Text - Labels
+^CF0,28
+^FO30,35^FDbrand:^FS
+^FO30,120^FDTYPE:^FS
+^FO30,215^FDYEAR:^FS
+
+^FX Header Text - Brand Value (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Font sizing: 50pt (<=25 chars) | 40pt (25-40) | 35pt (40-60) | 30pt (60-80) | 25pt (80+)
+^CF0,{BRAND_FONT_SIZE}
+^FO450,30^FB1015,1,0,C^FD{BRAND_NAME}\\&^FS
+
+^FX Header Text - Model Type (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Font sizing: 50pt (<=25) | 40pt (25-40) | 32pt (40-60) | 26pt (60-80) | 22pt (80-100) | 20pt (100-130) | 18pt (130+)
+^FX Constraint: 1015 dots width, 2-line wrap, max 130 chars
+^CF0,{MODEL_FONT_SIZE}
+^FO450,100^FB1015,2,0,C^FD{MODEL_TYPE}\\&^FS
+
+^FX Header Text - Year Value
+^CF0,40
+^FO450,205^FB1015,1,0,C^FD{YEAR}\\&^FS
+
+^FX ============================================================
+^FX SECTION 2: FRONT / REAR HEADERS - Y: 260-320 (60 dots)
+^FX ============================================================
+^FO10,260^GB722,60,3^FS
+^FO732,260^GB723,60,3^FS
+^CF0,45
+^FO10,270^FB722,1,0,C^FDFRONT:\\&^FS
+^FO732,270^FB723,1,0,C^FDREAR:\\&^FS
+
+^FX ============================================================
+^FX SECTION 3: SPRINGS - Y: 320-380 (60 dots)
+^FX ============================================================
+^FO10,320^GB722,60,3^FS
+^FO732,320^GB723,60,3^FS
+^FO350,320^GB3,60,3^FS
+^FO1050,320^GB3,60,3^FS
+
+^CF0,28
+^FO25,340^FDForkspring:^FS
+^FO350,340^FB372,1,0,C^FD{FORK_SPRING}\\&^FS
+^FO747,340^FDShockspring:^FS
+^FO1050,340^FB395,1,0,C^FD{SHOCK_SPRING}\\&^FS
+
+^FX ============================================================
+^FX SECTION 4: KIT INFO - Y: 380-430 (50 dots) - REDUCED from 55
+^FX ============================================================
+^FO10,380^GB1445,50,3^FS
+
+^FX Kit Information (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX Format: "FORKKIT: {FORKCODE} --- SHOCKKIT: {SHOCKCODE} --- COMBIKIT: {COMBICODE}"
+^FX Default value for each code: "NONE" (when NULL in source data)
+^FX Font sizing: 28pt (<=40 chars) | 26pt (40-60) | 24pt (60-80) | 22pt (80-100) | 20pt (100-120) | 18pt (120+)
+^CF0,{KIT_FONT_SIZE}
+^FO10,392^FB1445,1,0,C^FDFORKKIT: {FORKCODE} --- SHOCKKIT: {SHOCKCODE} --- COMBIKIT: {COMBICODE}\\&^FS
+
+^FX ============================================================
+^FX SECTION 5: NOTES FIELD - Y: 430-515 (85 dots) - INCREASED from 55
+^FX ============================================================
+^FX ** MAJOR CHANGE: Now supports 2-line wrap for longer content **
+^FO10,430^GB1445,85,3^FS
+
+^FX Notes Field (DYNAMIC - CHARACTER COUNT ADAPTIVE)
+^FX ** NOW 2-LINE CAPABLE ** - changed from ^FB1445,1 to ^FB1445,2
+^FX Field width: 1385 dots (30px padding on each side to prevent clipping)
+^FX Data sources: Column P (FORK EXTRA INFO) + Column V (REAR EXTRA INFO)
+^FX Combination logic: "F: {P_value}" | "R: {V_value}" | "F: {P_value} / R: {V_value}"
+^FX Font sizing: 26pt (<=80) | 24pt (80-120) | 22pt (120-160) | 20pt (160-200) | 18pt (200-250) | 16pt (250+)
+^FX Max capacity: ~220-250 chars with 2 lines (vs ~120 single line)
+^FX For extreme cases (>250 chars): Truncation still required
+^CF0,{NOTES_FONT_SIZE}
+^FO40,445^FB1385,2,0,C^FD{NOTES}\\&^FS
+
+^FX ============================================================
+^FX SECTION 6: ADJUSTMENT HEADERS - Y: 515-560 (45 dots) - REDUCED from 55
+^FX ============================================================
+^FO10,515^GB722,45,3^FS
+^FO732,515^GB723,45,3^FS
+^CF0,32
+^FO10,525^FB722,1,0,C^FDFork Adjustments:\\&^FS
+^FO732,525^FB723,1,0,C^FDShock Adjustments:\\&^FS
+
+^FX ============================================================
+^FX SECTION 6: DATA TABLE - Y: 560-770 (210 dots) - REDUCED from 225
+^FX Row height: 42 dots (was 45)
+^FX ============================================================
+^FO10,560^GB380,210,3^FS
+^FO390,560^GB342,210,3^FS
+^FO732,560^GB380,210,3^FS
+^FO1112,560^GB343,210,3^FS
+
+^FX Horizontal Grid Lines (42-dot row spacing)
+^FO10,602^GB1445,3,3^FS
+^FO10,644^GB1445,3,3^FS
+^FO10,686^GB1445,3,3^FS
+^FO10,728^GB1445,3,3^FS
+
+^FX Data Content - Row 1: Oil Type (y=560-602)
+^CF0,22
+^FO10,573^FB380,1,0,C^FDHYPERPRO OIL\\&^FS
+^FO390,573^FB342,1,0,C^FD{OIL_TYPE}\\&^FS
+
+^FX Data Content - Row 2: Oil Level (y=602-644)
+^FO10,615^FB380,1,0,C^FDOIL LEVEL\\&^FS
+^FO390,615^FB342,1,0,C^FD{OIL_LEVEL}\\&^FS
+
+^FX Data Content - Row 3: Spring Preload (y=644-686)
+^FO10,657^FB380,1,0,C^FDSPRING PRELOAD\\&^FS
+^FO390,657^FB342,1,0,C^FD{FORK_PRELOAD}\\&^FS
+^FO732,657^FB380,1,0,C^FDSPRING PRELOAD\\&^FS
+^FO1112,657^FB343,1,0,C^FD{SHOCK_PRELOAD}\\&^FS
+
+^FX Data Content - Row 4: Static Sag (y=686-728)
+^FO10,699^FB380,1,0,C^FDSTATIC SAG\\&^FS
+^FO390,699^FB342,1,0,C^FD{FORK_SAG}\\&^FS
+^FO732,699^FB380,1,0,C^FDSTATIC SAG\\&^FS
+^FO1112,699^FB343,1,0,C^FD{SHOCK_SAG}\\&^FS
+
+^FX Data Content - Row 5: Compression (y=728-770)
+^FO10,741^FB380,1,0,C^FDCOMPRESSION\\&^FS
+^FO390,741^FB342,1,0,C^FD{FORK_COMPRESSION}\\&^FS
+^FO732,741^FB380,1,0,C^FDCOMPRESSION\\&^FS
+^FO1112,741^FB343,1,0,C^FD{SHOCK_COMPRESSION}\\&^FS
+
+^FX ============================================================
+^FX SECTION 7: FOOTER LEGEND - Y: 770-817 (47 dots)
+^FX ============================================================
+^FO10,770^GB1445,47,3^FS
+^CF0,16
+^FO10,785^FB1445,1,0,C^FDmm=millimeter, T=Turns(CCW), K=Klicks(CCW), P=Position, R=Rings(Visible)\\&^FS
+
+^XZ`;
+
+        // ============ UTILITIES ============
+
+        function escapeZpl(str) {
+            if (str == null || str === undefined) return '';
+            const text = String(str);
+            return text.replace(/[\^~\\{}]/g, (char) => {
+                const map = { '^': '\\^', '~': '\\~', '\\': '\\\\', '{': '\\{', '}': '\\}' };
+                return map[char];
+            });
+        }
+
+        function calculateBrandFontSize(text) {
+            const len = text.length;
+            if (len <= 25) return 50;
+            if (len <= 40) return 40;
+            if (len <= 60) return 35;
+            if (len <= 80) return 30;
+            return 25;
+        }
+
+        function calculateModelFontSize(text) {
+            const len = text.length;
+            if (len <= 25) return 50;
+            if (len <= 40) return 40;
+            if (len <= 60) return 32;
+            if (len <= 80) return 26;
+            if (len <= 100) return 22;
+            if (len <= 130) return 20;
+            return 18;
+        }
+
+        function calculateKitFontSize(vars) {
+            const kitLine = `FORKKIT: ${vars.FORKCODE} --- SHOCKKIT: ${vars.SHOCKCODE} --- COMBIKIT: ${vars.COMBICODE}`;
+            const len = kitLine.length;
+            if (len <= 40) return 28;
+            if (len <= 60) return 26;
+            if (len <= 80) return 24;
+            if (len <= 100) return 22;
+            if (len <= 120) return 20;
+            return 18;
+        }
+
+        function calculateNotesFontSize(text) {
+            const len = text.length;
+            if (len <= 80) return 26;
+            if (len <= 120) return 24;
+            if (len <= 160) return 22;
+            if (len <= 200) return 20;
+            if (len <= 250) return 18;
+            return 16;
+        }
+
+        function combineNotes(forkInfo, rearInfo) {
+            const f = (forkInfo || '').toString().trim();
+            const r = (rearInfo || '').toString().trim();
+            if (f && r) return `F: ${f} / R: ${r}`;
+            if (f) return `F: ${f}`;
+            if (r) return `R: ${r}`;
+            return '';
+        }
+
+        function prepareVariables(rowData) {
+            const vars = {
+                BRAND_NAME: rowData.F || 'N/A',
+                MODEL_TYPE: rowData.G || 'N/A',
+                YEAR: rowData.H || 'N/A',
+                FORK_SPRING: rowData.I || 'N/A',
+                SHOCK_SPRING: rowData.Q || 'N/A',
+                FORKCODE: rowData.C || 'NONE',
+                SHOCKCODE: rowData.D || 'NONE',
+                COMBICODE: rowData.E || 'NONE',
+                OIL_TYPE: rowData.J || 'N/A',
+                OIL_LEVEL: rowData.K || 'N/A',
+                FORK_PRELOAD: rowData.L || 'N/A',
+                SHOCK_PRELOAD: rowData.R || 'N/A',
+                FORK_SAG: rowData.M || 'N/A',
+                SHOCK_SAG: rowData.S || 'N/A',
+                FORK_COMPRESSION: rowData.N || 'N/A',
+                SHOCK_COMPRESSION: rowData.T || 'N/A'
+            };
+
+            vars.NOTES = combineNotes(rowData.P, rowData.V);
+
+            // Calculate font sizes BEFORE sanitization
+            vars.BRAND_FONT_SIZE = calculateBrandFontSize(vars.BRAND_NAME);
+            vars.MODEL_FONT_SIZE = calculateModelFontSize(vars.MODEL_TYPE);
+            vars.KIT_FONT_SIZE = calculateKitFontSize(vars);
+            vars.NOTES_FONT_SIZE = calculateNotesFontSize(vars.NOTES);
+
+            // Sanitize all text fields
+            const textFields = [
+                'BRAND_NAME', 'MODEL_TYPE', 'YEAR', 'FORK_SPRING', 'SHOCK_SPRING',
+                'FORKCODE', 'SHOCKCODE', 'COMBICODE', 'OIL_TYPE', 'OIL_LEVEL',
+                'FORK_PRELOAD', 'SHOCK_PRELOAD', 'FORK_SAG', 'SHOCK_SAG',
+                'FORK_COMPRESSION', 'SHOCK_COMPRESSION', 'NOTES'
+            ];
+
+            textFields.forEach(field => {
+                if (vars[field]) {
+                    vars[field] = escapeZpl(vars[field]);
+                }
+            });
+
+            return vars;
+        }
+
+        function generateZPL(rowData) {
+            const vars = prepareVariables(rowData);
+            let zpl = BIG_TEMPLATE;
+
+            Object.entries(vars).forEach(([key, value]) => {
+                const regex = new RegExp(`\\{${key}\\}`, 'g');
+                zpl = zpl.replace(regex, value);
+            });
+
+            return zpl;
+        }
+
+        async function renderLabelary(zpl) {
+            const url = 'https://api.labelary.com/v1/printers/12dpmm/labels/4.88x2.75/0/';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: zpl
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Labelary API error: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                return URL.createObjectURL(blob);
+            } catch (error) {
+                console.error('Labelary rendering error:', error);
+                throw error;
+            }
+        }
+
+        // ============ TEST CASES ============
+
+        const testCases = [
+            {
+                name: "1. Normal Case - Typical Data",
+                description: "Standard product with all fields populated",
+                data: {
+                    C: 'FK-ABC-001',
+                    D: 'SK-ABC-001',
+                    E: 'CB-ABC-001',
+                    F: 'Yamaha',
+                    G: 'YZ450F',
+                    H: '2023',
+                    I: '5.0 N/mm',
+                    J: '10W',
+                    K: '110mm',
+                    L: '3T',
+                    M: '30mm',
+                    N: '12K',
+                    P: 'Install spacer before assembly',
+                    Q: '85 N/mm',
+                    R: '2T',
+                    S: '10mm',
+                    T: '8K',
+                    V: 'Check linkage before use'
+                }
+            },
+            {
+                name: "2. Very Long Brand Name (80+ chars)",
+                description: "Tests brand name font scaling for long manufacturer names",
+                data: {
+                    C: 'FK-LONG-001',
+                    D: 'NONE',
+                    E: 'NONE',
+                    F: 'Harley-Davidson Motor Company International Manufacturing Division Europe',
+                    G: 'Street Glide Special',
+                    H: '2024',
+                    I: '6.5 N/mm',
+                    J: '15W',
+                    K: '120mm',
+                    L: '4T',
+                    M: '35mm',
+                    N: '10K',
+                    P: '',
+                    Q: '90 N/mm',
+                    R: '3T',
+                    S: '12mm',
+                    T: '9K',
+                    V: ''
+                }
+            },
+            {
+                name: "3. Very Long Model Type (130+ chars)",
+                description: "Tests 2-line wrapping and font scaling for extremely long model names",
+                data: {
+                    C: 'NONE',
+                    D: 'SK-MODEL-001',
+                    E: 'NONE',
+                    F: 'BMW',
+                    G: 'R1250GS Adventure Triple Black Limited Edition with Premium Package and Dynamic ESA Pro Suspension System',
+                    H: '2025',
+                    I: '7.0 N/mm',
+                    J: '10W',
+                    K: '100mm',
+                    L: '2T',
+                    M: '25mm',
+                    N: '15K',
+                    P: '',
+                    Q: '95 N/mm',
+                    R: '4T',
+                    S: '15mm',
+                    T: '12K',
+                    V: ''
+                }
+            },
+            {
+                name: "4. Long Notes Field (200+ chars)",
+                description: "Tests 2-line notes field wrapping with combined fork/rear info",
+                data: {
+                    C: 'FK-NOTES-001',
+                    D: 'SK-NOTES-001',
+                    E: 'CB-NOTES-001',
+                    F: 'Ducati',
+                    G: 'Multistrada V4',
+                    H: '2024',
+                    I: '8.0 N/mm',
+                    J: '15W',
+                    K: '115mm',
+                    L: '5T',
+                    M: '32mm',
+                    N: '18K',
+                    P: 'Ensure preload is set correctly before first ride. Check oil level every 20 hours of operation. Use only genuine Hyperpro oil.',
+                    Q: '100 N/mm',
+                    R: '6T',
+                    S: '18mm',
+                    T: '14K',
+                    V: 'Adjust compression damping for rider weight. Recommended starting point is 10 clicks from full hard. Recheck after first 100km.'
+                }
+            },
+            {
+                name: "5. Missing Optional Fields",
+                description: "Tests handling of missing/empty optional fields (shows N/A or NONE)",
+                data: {
+                    C: 'FK-MIN-001',
+                    D: '',
+                    E: '',
+                    F: 'KTM',
+                    G: '390 Duke',
+                    H: '2023',
+                    I: '',
+                    J: '',
+                    K: '',
+                    L: '',
+                    M: '',
+                    N: '',
+                    P: '',
+                    Q: '',
+                    R: '',
+                    S: '',
+                    T: '',
+                    V: ''
+                }
+            },
+            {
+                name: "6. Special Characters & ZPL Escaping",
+                description: "Tests ZPL character escaping (^, ~, \\, {, }) to prevent injection",
+                data: {
+                    C: 'FK^TEST~001',
+                    D: 'SK\\{TEST}',
+                    E: 'CB-~SPECIAL^',
+                    F: 'Honda^Motor',
+                    G: 'CB{650}R~Neo',
+                    H: '2024',
+                    I: '5.5 N/mm',
+                    J: '10W^40',
+                    K: '105mm',
+                    L: '3T~CCW',
+                    M: '28mm',
+                    N: '11K\\out',
+                    P: 'Use {OEM} parts^ only~',
+                    Q: '88 N/mm',
+                    R: '2T{CCW}',
+                    S: '11mm',
+                    T: '9K~',
+                    V: 'Check\\bolt~torque^'
+                }
+            },
+            {
+                name: "7. Combi Kit - All Codes Populated",
+                description: "Tests combi kit with all three product codes (fork, shock, combi)",
+                data: {
+                    C: 'FK-COMBI-2024-001',
+                    D: 'SK-COMBI-2024-001',
+                    E: 'CB-COMBI-2024-FULL-KIT',
+                    F: 'Kawasaki',
+                    G: 'Ninja ZX-10R',
+                    H: '2024',
+                    I: '9.0 N/mm',
+                    J: '15W',
+                    K: '125mm',
+                    L: '6T',
+                    M: '35mm',
+                    N: '20K',
+                    P: 'Race setup - adjust for track conditions',
+                    Q: '110 N/mm',
+                    R: '7T',
+                    S: '20mm',
+                    T: '16K',
+                    V: 'Rear height adjustment available'
+                }
+            }
+        ];
+
+        // ============ RENDER TEST RESULTS ============
+
+        async function runTests() {
+            const container = document.getElementById('test-results');
+
+            for (let i = 0; i < testCases.length; i++) {
+                const test = testCases[i];
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-case';
+                testDiv.innerHTML = `
+                    <h2>${test.name}</h2>
+                    <div class="test-info">
+                        <div><strong>Description:</strong> ${test.description}</div>
+                        <div><strong>Brand:</strong> ${test.data.F || 'N/A'} (${test.data.F ? test.data.F.length : 0} chars)</div>
+                        <div><strong>Model:</strong> ${test.data.G || 'N/A'} (${test.data.G ? test.data.G.length : 0} chars)</div>
+                        <div><strong>Fork Code:</strong> ${test.data.C || 'NONE'}</div>
+                        <div><strong>Shock Code:</strong> ${test.data.D || 'NONE'}</div>
+                        <div><strong>Combi Code:</strong> ${test.data.E || 'NONE'}</div>
+                        <div><strong>Notes:</strong> ${combineNotes(test.data.P, test.data.V) || 'None'} (${combineNotes(test.data.P, test.data.V).length} chars)</div>
+                    </div>
+                    <div class="preview-container">
+                        <p class="loading">⏳ Rendering label via Labelary API...</p>
+                        <div id="preview-${i}"></div>
+                    </div>
+                    <button class="copy-btn" onclick="copyZPL(${i})">📋 Copy ZPL Code</button>
+                    <div class="zpl-preview" id="zpl-${i}" style="display:none;"></div>
+                `;
+
+                container.appendChild(testDiv);
+
+                // Generate ZPL
+                try {
+                    const zpl = generateZPL(test.data);
+                    window[`zpl_${i}`] = zpl; // Store for copy function
+                    document.getElementById(`zpl-${i}`).textContent = zpl.substring(0, 500) + '...';
+
+                    // Render via Labelary
+                    const imageUrl = await renderLabelary(zpl);
+                    document.getElementById(`preview-${i}`).innerHTML = `
+                        <img src="${imageUrl}" alt="Label Preview ${i+1}" />
+                    `;
+                } catch (error) {
+                    document.getElementById(`preview-${i}`).innerHTML = `
+                        <div class="error">❌ Failed to render: ${error.message}</div>
+                    `;
+                }
+
+                // Small delay between requests to avoid rate limiting
+                if (i < testCases.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+        }
+
+        function copyZPL(index) {
+            const zpl = window[`zpl_${index}`];
+            const zplDiv = document.getElementById(`zpl-${index}`);
+
+            navigator.clipboard.writeText(zpl).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#4caf50';
+
+                // Show full ZPL preview
+                zplDiv.style.display = 'block';
+                zplDiv.textContent = zpl;
+
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#2c5aa0';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>

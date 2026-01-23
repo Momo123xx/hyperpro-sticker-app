@@ -108,13 +108,23 @@ class Cart {
         // Issue #4: Deep clone rowData to prevent mutation
         const clonedRowData = SecurityUtils.deepClone(rowData);
 
+        // Determine product code based on kit type
+        let productCode = 'N/A';
+        if (kitType === 'fork') {
+            productCode = clonedRowData.C || 'N/A';
+        } else if (kitType === 'shock') {
+            productCode = clonedRowData.D || 'N/A';
+        } else if (kitType === 'combi') {
+            productCode = clonedRowData.E || 'N/A';
+        }
+
         // Create item with cloned data
         const item = {
             id: this.nextId++,
             rowData: clonedRowData,
             kitType: kitType,
             quantity: finalQuantity,
-            productCode: clonedRowData.C || clonedRowData.D || clonedRowData.E || 'N/A',
+            productCode: productCode,
             productName: `${clonedRowData.F || ''} ${clonedRowData.G || ''}`.trim() || 'N/A',
             timestamp: Date.now()
         };
@@ -196,6 +206,14 @@ class Cart {
     }
 
     /**
+     * Get total jobs count (sum of all quantities)
+     * @returns {number} Total jobs (each product × quantity)
+     */
+    getTotalJobs() {
+        return this.items.reduce((total, item) => total + item.quantity, 0);
+    }
+
+    /**
      * Calculate sticker breakdown for a specific item
      * @param {Object} item - Cart item
      * @returns {Object} Breakdown of stickers { big, smallFork, smallShock, total }
@@ -219,7 +237,7 @@ class Cart {
 
     /**
      * Calculate total stickers across all cart items
-     * @returns {Object} Summary { totalItems, totalBig, totalSmallFork, totalSmallShock, totalSmall, grandTotal }
+     * @returns {Object} Summary { totalItems, totalJobs, totalBig, totalSmallFork, totalSmallShock, totalSmall, grandTotal }
      */
     getCartSummary() {
         let totalBig = 0;
@@ -235,6 +253,7 @@ class Cart {
 
         return {
             totalItems: this.items.length,
+            totalJobs: this.getTotalJobs(),
             totalBig: totalBig,
             totalSmallFork: totalSmallFork,
             totalSmallShock: totalSmallShock,

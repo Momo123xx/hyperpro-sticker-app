@@ -87,14 +87,14 @@
 
 ^FX Notes Field (DYNAMIC - CHARACTER COUNT ADAPTIVE)
 ^FX ** NOW 2-LINE CAPABLE ** - changed from ^FB1445,1 to ^FB1445,2
-^FX Field width: 1445 dots (full label width)
+^FX Field width: 1385 dots (30px padding on each side to prevent clipping)
 ^FX Data sources: Column P (FORK EXTRA INFO) + Column V (REAR EXTRA INFO)
 ^FX Combination logic: "F: {P_value}" | "R: {V_value}" | "F: {P_value} / R: {V_value}"
 ^FX Font sizing: 26pt (<=80) | 24pt (80-120) | 22pt (120-160) | 20pt (160-200) | 18pt (200-250) | 16pt (250+)
 ^FX Max capacity: ~220-250 chars with 2 lines (vs ~120 single line)
 ^FX For extreme cases (>250 chars): Truncation still required
 ^CF0,{NOTES_FONT_SIZE}
-^FO10,445^FB1445,2,0,C^FD{NOTES}\&^FS
+^FO40,445^FB1385,2,0,C^FD{NOTES}\&^FS
 
 ^FX ============================================================
 ^FX SECTION 6: ADJUSTMENT HEADERS - Y: 515-560 (45 dots) - REDUCED from 55
