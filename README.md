@@ -47,15 +47,25 @@ Place the following files in the appropriate directories:
 
 Since this is a static web application, you can host it using any of these methods:
 
-#### Option A: Local Development Server
+#### Option A: Local Development Server (Recommended)
 
-Using Python (Python 3):
+Using Bun (with hot reload):
+
+1. Install Bun:
 ```bash
-cd hyperpro-sticker-app
-python -m http.server 8000
+curl -fsSL https://bun.sh/install | bash
 ```
 
-Then open http://localhost:8000 in your browser.
+2. Install dependencies and start dev server:
+```bash
+cd hyperpro-sticker-app
+bun install
+bun run dev
+```
+
+The browser will open automatically at http://localhost:3000 with hot reload enabled.
+
+See `Docs/DEVELOPMENT.md` for detailed development instructions.
 
 #### Option B: Static Hosting Services
 
@@ -183,8 +193,9 @@ To modify the label format:
 
 ### Dependencies
 
-- **SheetJS (xlsx.js)**: Client-side Excel parsing
-  - Loaded via CDN: https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js
+- **SheetJS (xlsx.js)**: Client-side Excel parsing (v0.18.5)
+  - Installed via npm and served from `vendor/xlsx.full.min.js`
+  - Automatically set up during `bun install`
 
 ### Architecture
 

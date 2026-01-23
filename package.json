@@ -1,0 +1,18 @@
+{
+  "name": "hyperpro-sticker-generator",
+  "version": "1.0.0",
+  "description": "Web app for generating Zebra label files from product data",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run scripts/dev-server.js",
+    "build": "bun run scripts/build.js",
+    "setup": "bun run scripts/setup.js",
+    "postinstall": "bun run setup"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}

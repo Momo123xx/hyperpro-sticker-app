@@ -31,3 +31,10 @@ yarn-error.log*
 .temp/
 .tmp/
 *.bak
+
+# Bun
+bun.lockb
+
+# Vendor (generated during dev, but commit the xlsx file for prod)
+vendor/
+!vendor/xlsx.full.min.js
