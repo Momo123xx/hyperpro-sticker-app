@@ -32,6 +32,7 @@ yarn-error.log*
 .temp/
 .tmp/
 *.bak
+test-*.html
 
 # Bun
 bun.lockb
