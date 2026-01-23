@@ -20,7 +20,10 @@
         <div class="left-column">
           <section id="search-section">
             <h2>Search Product</h2>
-            <input type="text" id="search-input" placeholder="Enter product code..." autocomplete="off">
+            <div class="search-input-container">
+              <input type="text" id="search-input" placeholder="Enter product code..." autocomplete="off">
+              <input type="number" id="quantity-input" min="1" max="99" placeholder="Qty">
+            </div>
             <div id="search-results"></div>
           </section>
 
@@ -110,6 +113,10 @@
     </footer>
   </div>
 
+  <!-- Error handler must load first to capture all errors -->
+  <script src="js/error-handler.js"></script>
+  <!-- Security utilities must load before other modules -->
+  <script src="js/security-utils.js"></script>
   <script src="js/excel-parser.js"></script>
   <script src="js/search.js"></script>
   <script src="js/zbl-generator.js"></script>

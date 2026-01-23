@@ -40,23 +40,46 @@ const LIVE_RELOAD_SCRIPT = `
 (function() {
   let ws;
   let reconnectTimeout;
+  let heartbeatInterval;
 
   function connect() {
     ws = new WebSocket('ws://localhost:${PORT}/ws');
 
     ws.onopen = () => {
       console.log('🔌 Dev server connected');
+
+      // Clear any existing heartbeat
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+
+      // Send heartbeat every 25 seconds (before server's 30s ping)
+      heartbeatInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send('ping');
+        }
+      }, 25000);
     };
 
     ws.onmessage = (event) => {
       if (event.data === 'reload') {
         console.log('🔄 Reloading page...');
         location.reload();
+      } else if (event.data === 'ping') {
+        // Respond to server ping
+        ws.send('pong');
       }
     };
 
     ws.onclose = () => {
       console.log('❌ Dev server disconnected, attempting to reconnect...');
+
+      // Clear heartbeat
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+
+      // Attempt reconnection
       reconnectTimeout = setTimeout(connect, 1000);
     };
 
@@ -66,6 +89,16 @@ const LIVE_RELOAD_SCRIPT = `
   }
 
   connect();
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+    }
+    if (ws) {
+      ws.close();
+    }
+  });
 })();
 </script>
 `;
@@ -91,6 +124,15 @@ function setupFileWatcher() {
 
     const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
       if (!filename) return;
+
+      // Filter out hidden directories (any path component starting with '.')
+      const pathParts = filename.split('/');
+      const isHiddenPath = pathParts.some(part => part.startsWith('.'));
+
+      if (isHiddenPath) {
+        // Skip files in hidden directories (.git, .claude, etc.)
+        return;
+      }
 
       // Filter out files we don't want to trigger reload
       const ext = extname(filename);
@@ -175,6 +217,56 @@ const server = Bun.serve({
       return undefined;
     }
 
+    // Handle error logging endpoint
+    if (url.pathname === '/log-error' && req.method === 'POST') {
+      try {
+        const errorData = await req.json();
+
+        // Format error log for stdout
+        const timestamp = new Date(errorData.timestamp).toLocaleString();
+        const separator = '━'.repeat(60);
+
+        console.error('');
+        console.error(separator);
+        console.error(`❌ ERROR CAPTURED: ${errorData.category}`);
+        console.error(separator);
+        console.error(`Timestamp: ${timestamp}`);
+        console.error(`Context:   ${errorData.context}`);
+        console.error(`Message:   ${errorData.message}`);
+        console.error(`Error:     ${errorData.name}`);
+
+        if (errorData.metadata && Object.keys(errorData.metadata).length > 0) {
+          console.error('\nMetadata:');
+          Object.entries(errorData.metadata).forEach(([key, value]) => {
+            if (typeof value === 'object') {
+              console.error(`  ${key}: ${JSON.stringify(value, null, 2)}`);
+            } else {
+              console.error(`  ${key}: ${value}`);
+            }
+          });
+        }
+
+        if (errorData.stack) {
+          console.error('\nStack Trace:');
+          console.error(errorData.stack);
+        }
+
+        console.error(separator);
+        console.error('');
+
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (logError) {
+        console.error('Failed to process error log:', logError);
+        return new Response(JSON.stringify({ success: false, error: logError.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // Determine file path
     let filepath = url.pathname === '/' ? '/index.html' : url.pathname;
     filepath = join(projectRoot, filepath);
@@ -191,16 +283,37 @@ const server = Bun.serve({
     open(ws) {
       clients.add(ws);
       console.log(`🔌 Client connected (${clients.size} total)`);
+
+      // Send periodic ping to keep connection alive
+      ws.pingInterval = setInterval(() => {
+        if (ws.readyState === 1) { // WebSocket.OPEN
+          ws.ping();
+        }
+      }, 30000); // Ping every 30 seconds
     },
 
-    close(ws) {
+    close(ws, code, reason) {
+      // Clear ping interval
+      if (ws.pingInterval) {
+        clearInterval(ws.pingInterval);
+      }
+
       clients.delete(ws);
-      console.log(`❌ Client disconnected (${clients.size} remaining)`);
+      console.log(`❌ Client disconnected (${clients.size} remaining) - Code: ${code}, Reason: ${reason || 'N/A'}`);
     },
 
     message(ws, message) {
-      // Handle messages from client if needed
+      // Handle pong or other messages from client
+      if (message === 'pong') {
+        // Client acknowledged ping
+      }
     },
+
+    // Bun WebSocket configuration
+    perMessageDeflate: false,
+    maxPayloadLength: 16 * 1024 * 1024, // 16MB
+    idleTimeout: 120, // 2 minutes idle timeout
+    backpressureLimit: 1024 * 1024, // 1MB
   },
 });
 

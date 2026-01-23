@@ -3,6 +3,14 @@
  * Handles cart state, item management, and sticker calculations
  */
 
+// Cart configuration
+const CART_CONFIG = {
+    MAX_ITEMS: 500,                // Cart size limit
+    MAX_ID: 999999,                // ID reset threshold
+    STORAGE_KEY: 'hyperpro_cart',  // localStorage key
+    STORAGE_VERSION: 1             // Schema version
+};
+
 // Kit type sticker rules
 const STICKER_RULES = {
     fork: { big: 1, smallFork: 2, smallShock: 0 },    // 3 total per kit
@@ -15,6 +23,7 @@ class Cart {
         this.items = [];
         this.nextId = 1;
         this.listeners = [];
+        this.loadFromStorage();  // Auto-restore cart from localStorage
     }
 
     /**
@@ -22,20 +31,99 @@ class Cart {
      * @param {Object} rowData - Product data from CSV
      * @param {string} kitType - 'fork', 'shock', or 'combi'
      * @param {number} quantity - Number of kits
-     * @returns {Object} The added cart item
+     * @returns {Object} The added cart item or null if validation fails
      */
     addToCart(rowData, kitType, quantity = 1) {
+        // Issue #3: Validate row data
+        const validation = SecurityUtils.validateRowData(rowData);
+        if (!validation.valid) {
+            const errorMsg = SecurityUtils.formatValidationErrors(validation.errors);
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.logError(
+                    new Error(`Invalid row data: ${errorMsg}`),
+                    'Cart.addToCart',
+                    {
+                        category: 'VALIDATION_ERROR',
+                        validationErrors: validation.errors,
+                        userMessage: 'Cannot add item: product data is incomplete'
+                    }
+                );
+            } else {
+                console.error('Invalid row data:', validation.errors);
+            }
+            return null;
+        }
+
+        // Issue #5: Validate kit type
+        if (!SecurityUtils.validateKitType(kitType)) {
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.logError(
+                    new Error(`Invalid kit type: ${kitType}`),
+                    'Cart.addToCart',
+                    {
+                        category: 'VALIDATION_ERROR',
+                        kitType,
+                        userMessage: `Invalid kit type: ${kitType}. Must be fork, shock, or combi.`
+                    }
+                );
+            } else {
+                console.error(`Invalid kit type: ${kitType}`);
+            }
+            return null;
+        }
+
+        // Issue #3: Validate & clamp quantity
+        const qtyCheck = SecurityUtils.validateQuantity(quantity);
+        const finalQuantity = qtyCheck.clamped;
+
+        if (qtyCheck.warning) {
+            console.warn(qtyCheck.warning);
+        }
+
+        // Issue #6: Check cart limit
+        if (this.items.length >= CART_CONFIG.MAX_ITEMS) {
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.logError(
+                    new Error('Cart is full'),
+                    'Cart.addToCart',
+                    {
+                        category: 'CART_ERROR',
+                        currentItems: this.items.length,
+                        maxItems: CART_CONFIG.MAX_ITEMS,
+                        userMessage: `Cart is full (maximum ${CART_CONFIG.MAX_ITEMS} items). Please remove items or generate labels.`
+                    }
+                );
+            } else {
+                console.error(`Cart is full (${CART_CONFIG.MAX_ITEMS} items)`);
+            }
+            return null;
+        }
+
+        // Issue #7: Check ID overflow & reset
+        if (this.nextId > CART_CONFIG.MAX_ID) {
+            console.warn(`ID overflow at ${this.nextId}, resetting to 1`);
+            this.nextId = 1;
+        }
+
+        // Issue #4: Deep clone rowData to prevent mutation
+        const clonedRowData = SecurityUtils.deepClone(rowData);
+
+        // Create item with cloned data
         const item = {
             id: this.nextId++,
-            rowData: rowData,
+            rowData: clonedRowData,
             kitType: kitType,
-            quantity: quantity,
-            productCode: rowData['Product Code'],
-            productName: rowData['Product Name'],
+            quantity: finalQuantity,
+            productCode: clonedRowData.C || clonedRowData.D || clonedRowData.E || 'N/A',
+            productName: `${clonedRowData.F || ''} ${clonedRowData.G || ''}`.trim() || 'N/A',
             timestamp: Date.now()
         };
 
         this.items.push(item);
+
+        // Issue #8: Save to localStorage
+        this.saveToStorage();
+
         this.notifyListeners();
         return item;
     }
@@ -50,6 +138,7 @@ class Cart {
         this.items = this.items.filter(item => item.id !== itemId);
 
         if (this.items.length < initialLength) {
+            this.saveToStorage();
             this.notifyListeners();
             return true;
         }
@@ -63,11 +152,18 @@ class Cart {
      * @returns {boolean} True if quantity was updated
      */
     updateQuantity(itemId, newQuantity) {
-        if (newQuantity < 1) return false;
+        // Validate and clamp quantity
+        const qtyCheck = SecurityUtils.validateQuantity(newQuantity);
+        const finalQuantity = qtyCheck.clamped;
+
+        if (qtyCheck.warning) {
+            console.warn(qtyCheck.warning);
+        }
 
         const item = this.items.find(item => item.id === itemId);
         if (item) {
-            item.quantity = newQuantity;
+            item.quantity = finalQuantity;
+            this.saveToStorage();
             this.notifyListeners();
             return true;
         }
@@ -79,6 +175,7 @@ class Cart {
      */
     clearCart() {
         this.items = [];
+        this.saveToStorage();
         this.notifyListeners();
     }
 
@@ -104,7 +201,14 @@ class Cart {
      * @returns {Object} Breakdown of stickers { big, smallFork, smallShock, total }
      */
     calculateItemStickers(item) {
-        const rules = STICKER_RULES[item.kitType];
+        // Validate kit type and fallback to 'fork' if invalid
+        let kitType = item.kitType;
+        if (!SecurityUtils.validateKitType(kitType)) {
+            console.warn(`Invalid kit type '${kitType}', defaulting to fork`);
+            kitType = 'fork';
+        }
+
+        const rules = STICKER_RULES[kitType];
         return {
             big: rules.big * item.quantity,
             smallFork: rules.smallFork * item.quantity,
@@ -175,9 +279,25 @@ class Cart {
 
     /**
      * Notify all listeners of cart changes
+     * Isolates each callback so one failure doesn't break others
      */
     notifyListeners() {
-        this.listeners.forEach(callback => callback());
+        this.listeners.forEach((callback, index) => {
+            try {
+                callback();
+            } catch (error) {
+                // Log error but continue with other listeners
+                if (typeof ErrorHandler !== 'undefined') {
+                    ErrorHandler.logError(error, `Cart.notifyListeners[${index}]`, {
+                        category: 'EVENT_ERROR',
+                        listenerIndex: index,
+                        showUser: false
+                    });
+                } else {
+                    console.error(`Error in cart listener ${index}:`, error);
+                }
+            }
+        });
     }
 
     /**
@@ -195,6 +315,121 @@ class Cart {
      */
     static getStickerRules(kitType) {
         return STICKER_RULES[kitType] || STICKER_RULES.fork;
+    }
+
+    // ============ LOCALSTORAGE METHODS ============
+
+    /**
+     * Save cart to localStorage
+     */
+    saveToStorage() {
+        try {
+            const cartData = {
+                version: CART_CONFIG.STORAGE_VERSION,
+                items: this.items,
+                nextId: this.nextId,
+                timestamp: Date.now()
+            };
+
+            localStorage.setItem(CART_CONFIG.STORAGE_KEY, JSON.stringify(cartData));
+        } catch (error) {
+            // Handle quota exceeded or permission errors
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.logError(error, 'Cart.saveToStorage', {
+                    category: 'STORAGE_ERROR',
+                    showUser: false
+                });
+            } else {
+                console.warn('Failed to save cart to localStorage:', error);
+            }
+        }
+    }
+
+    /**
+     * Load cart from localStorage
+     */
+    loadFromStorage() {
+        try {
+            const stored = localStorage.getItem(CART_CONFIG.STORAGE_KEY);
+            if (!stored) {
+                return; // No saved cart
+            }
+
+            const cartData = JSON.parse(stored);
+
+            // Version check
+            if (cartData.version !== CART_CONFIG.STORAGE_VERSION) {
+                console.warn('Cart storage version mismatch, clearing old data');
+                this.clearStorage();
+                return;
+            }
+
+            // Validate restored items
+            if (Array.isArray(cartData.items)) {
+                const validItems = cartData.items.filter(item => {
+                    // Basic validation of restored items
+                    return item &&
+                           typeof item === 'object' &&
+                           item.rowData &&
+                           item.kitType &&
+                           SecurityUtils.validateKitType(item.kitType) &&
+                           SecurityUtils.validateRowData(item.rowData).valid;
+                });
+
+                this.items = validItems;
+                this.nextId = cartData.nextId || 1;
+
+                console.log(`✅ Cart restored: ${validItems.length} items`);
+            }
+        } catch (error) {
+            // Handle corrupted data
+            console.warn('Failed to load cart from localStorage, clearing:', error);
+            this.clearStorage();
+
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.logError(error, 'Cart.loadFromStorage', {
+                    category: 'STORAGE_ERROR',
+                    userMessage: 'Could not restore previous cart. Starting with empty cart.',
+                    showUser: false
+                });
+            }
+        }
+    }
+
+    /**
+     * Clear cart from localStorage
+     */
+    clearStorage() {
+        try {
+            localStorage.removeItem(CART_CONFIG.STORAGE_KEY);
+        } catch (error) {
+            console.warn('Failed to clear cart storage:', error);
+        }
+    }
+
+    /**
+     * Get storage info for debugging
+     * @returns {Object} Storage information
+     */
+    getStorageInfo() {
+        try {
+            const stored = localStorage.getItem(CART_CONFIG.STORAGE_KEY);
+            if (!stored) {
+                return { exists: false };
+            }
+
+            const cartData = JSON.parse(stored);
+            return {
+                exists: true,
+                version: cartData.version,
+                itemCount: cartData.items ? cartData.items.length : 0,
+                nextId: cartData.nextId,
+                timestamp: cartData.timestamp,
+                size: stored.length
+            };
+        } catch (error) {
+            return { exists: false, error: error.message };
+        }
     }
 }
 

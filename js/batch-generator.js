@@ -117,6 +117,7 @@ class BatchZBLGenerator {
      * @returns {Object} Variables object
      */
     prepareVariables(rowData) {
+        // Prepare raw variables (before sanitization)
         const vars = {
             BRAND_NAME: rowData.F || 'N/A',
             MODEL_TYPE: rowData.G || 'N/A',
@@ -136,18 +137,31 @@ class BatchZBLGenerator {
             SHOCK_COMPRESSION: rowData.T || 'N/A'
         };
 
-        // Calculate font sizes for BIG stickers
+        // Combine notes field BEFORE sanitization
+        vars.NOTES = this.combineNotes(rowData.P, rowData.V);
+
+        // CRITICAL: Calculate font sizes BEFORE sanitization
+        // (escaping characters changes string length)
         vars.BRAND_FONT_SIZE = this.calculateBrandFontSize(vars.BRAND_NAME);
         vars.MODEL_FONT_SIZE = this.calculateModelFontSize(vars.MODEL_TYPE);
         vars.KIT_FONT_SIZE = this.calculateKitFontSize(vars);
-
-        // Calculate font sizes for SMALL stickers
         vars.BRAND_FONT_SIZE_SMALL = this.calculateBrandFontSizeSmall(vars.BRAND_NAME);
         vars.MODEL_FONT_SIZE_SMALL = this.calculateModelFontSizeSmall(vars.MODEL_TYPE);
-
-        // Combine notes field
-        vars.NOTES = this.combineNotes(rowData.P, rowData.V);
         vars.NOTES_FONT_SIZE = this.calculateNotesFontSize(vars.NOTES);
+
+        // Sanitize all text fields for ZPL injection protection
+        const textFields = [
+            'BRAND_NAME', 'MODEL_TYPE', 'YEAR', 'FORK_SPRING', 'SHOCK_SPRING',
+            'FORKCODE', 'SHOCKCODE', 'COMBICODE', 'OIL_TYPE', 'OIL_LEVEL',
+            'FORK_PRELOAD', 'SHOCK_PRELOAD', 'FORK_SAG', 'SHOCK_SAG',
+            'FORK_COMPRESSION', 'SHOCK_COMPRESSION', 'NOTES'
+        ];
+
+        textFields.forEach(field => {
+            if (vars[field]) {
+                vars[field] = SecurityUtils.escapeZpl(vars[field]);
+            }
+        });
 
         return vars;
     }
@@ -259,13 +273,65 @@ class BatchZBLGenerator {
      * @param {string} filename - Filename
      */
     static downloadFile(content, filename) {
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
+        try {
+            // Validate inputs
+            if (!content || typeof content !== 'string') {
+                throw new Error('Invalid content for download: content must be a non-empty string');
+            }
+
+            if (!filename || typeof filename !== 'string') {
+                throw new Error('Invalid filename for download: filename must be a non-empty string');
+            }
+
+            // Create blob
+            let blob;
+            try {
+                blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            } catch (blobError) {
+                throw new Error(`Failed to create Blob: ${blobError.message}`);
+            }
+
+            // Create object URL
+            let url;
+            try {
+                url = URL.createObjectURL(blob);
+            } catch (urlError) {
+                throw new Error(`Failed to create object URL: ${urlError.message}`);
+            }
+
+            // Create and trigger download
+            try {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+            } catch (downloadError) {
+                throw new Error(`Failed to trigger download: ${downloadError.message}`);
+            } finally {
+                // Always clean up the URL
+                if (url) {
+                    try {
+                        URL.revokeObjectURL(url);
+                    } catch (revokeError) {
+                        console.warn('Failed to revoke object URL:', revokeError);
+                    }
+                }
+            }
+
+            console.log(`✅ File downloaded: ${filename} (${content.length} bytes)`);
+        } catch (error) {
+            if (typeof ErrorHandler !== 'undefined') {
+                ErrorHandler.logError(error, 'BatchZBLGenerator.downloadFile', {
+                    category: 'DOWNLOAD_ERROR',
+                    filename,
+                    contentLength: content ? content.length : 0,
+                    userMessage: `Failed to download file "${filename}". Please try again.`
+                });
+            } else {
+                console.error('Download error:', error);
+            }
+            throw error;
+        }
     }
 }
 
