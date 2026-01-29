@@ -5,7 +5,7 @@
 
 class PdfGenerator {
     constructor() {
-        this.baseUrl = 'http://api.labelary.com/v1/printers';
+        this.baseUrl = 'https://api.labelary.com/v1/printers';
         this.dpi = '12dpmm'; // 12 dots per mm (≈300 DPI to match ZPL templates)
 
         // Label dimensions in inches (Labelary requires inches)
