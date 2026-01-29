@@ -501,9 +501,12 @@ h2 {
 /* Cart Actions */
 .cart-actions {
   padding: 15px 20px;
+  padding-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: white;
+  border-radius: 0 0 10px 10px;
 }
 
 .btn-download,
@@ -649,4 +652,441 @@ footer {
   border-radius: 5px;
   margin-bottom: 20px;
   border-left: 4px solid #c33;
+}
+
+/* ==================== PRINT MANAGEMENT HUB STYLES ==================== */
+
+/* Settings Icon Button */
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: transform 0.2s;
+  opacity: 0.7;
+}
+
+.btn-icon:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+/* Action Groups for Print/Download/PDF buttons */
+.action-group {
+  margin-bottom: 15px;
+}
+
+.action-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 8px;
+  padding-left: 5px;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+/* Print Buttons (Green Gradient) */
+.btn-print {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+  grid-column: span 3;
+}
+
+.btn-print:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-print:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Print Both Button */
+.btn-print-both {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: bold;
+}
+
+.btn-print-both:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-print-both:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Small Download/PDF Buttons */
+.btn-download-small {
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-download-small:hover:not(:disabled) {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.btn-download-small:disabled {
+  background: #f9f9f9;
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Panel */
+.modal-panel {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Header */
+.modal-header {
+  padding: 20px 25px;
+  border-bottom: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+/* Modal Body */
+.modal-body {
+  padding: 25px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body h3 {
+  font-size: 1.1rem;
+  color: #667eea;
+  margin-bottom: 15px;
+  margin-top: 0;
+}
+
+/* Modal Footer */
+.modal-footer {
+  padding: 15px 25px;
+  border-top: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: bold;
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+/* Printer Discovery Section */
+.printer-discovery {
+  margin-bottom: 25px;
+}
+
+.btn-scan {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  font-size: 0.95rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 15px;
+}
+
+.btn-scan:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-scan:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.printer-list {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 15px;
+  min-height: 80px;
+}
+
+.printer-list .hint {
+  color: #999;
+  font-size: 0.9rem;
+  font-style: italic;
+  text-align: center;
+  margin: 0;
+}
+
+.printer-list .loading {
+  color: #667eea;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+}
+
+.printer-list .warning {
+  color: #f39c12;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+}
+
+.printer-list .error {
+  color: #c33;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+  background: transparent;
+  border: none;
+}
+
+.printer-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.printer-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  margin-bottom: 8px;
+}
+
+.printer-icon {
+  font-size: 1.2rem;
+}
+
+.printer-name {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #333;
+  flex: 1;
+}
+
+/* Printer Slots Section */
+.printer-slots {
+  margin-bottom: 25px;
+}
+
+.printer-slot {
+  margin-bottom: 20px;
+}
+
+.printer-slot label {
+  display: block;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.printer-select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+  transition: border-color 0.3s;
+}
+
+.printer-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.btn-test {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-test:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.btn-test:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Printer Status Section */
+.printer-status {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 15px;
+}
+
+.printer-status p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.printer-status #status-text {
+  color: #333;
+  font-weight: normal;
+}
+
+/* Responsive adjustments for modal */
+@media (max-width: 768px) {
+  .modal-panel {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 15px;
+  }
+
+  .button-row {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-print {
+    grid-column: span 1;
+  }
 }

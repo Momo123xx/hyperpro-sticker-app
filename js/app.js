@@ -7,6 +7,13 @@ let currentRowData;
 let templates = {};
 let currentMatchResult = null; // Stores { match, kitType } when exact match found
 
+// Print Management Module globals
+let settingsStorage;
+let printerManager;
+let pdfGenerator;
+let printRouter;
+let settingsUI;
+
 async function initializeApp() {
   try {
     showLoading('Loading application...');
@@ -51,6 +58,31 @@ async function initializeApp() {
 
     // Render cart UI immediately if there are items from previous session
     updateCartUI();
+
+    // Initialize print management modules (non-fatal - app works without printing)
+    try {
+      settingsStorage = new SettingsStorage();
+      printerManager = new PrinterManager();
+      pdfGenerator = new PdfGenerator();
+      printRouter = new PrintRouter(printerManager, settingsStorage);
+      settingsUI = new SettingsUI(printerManager, settingsStorage, printRouter);
+
+      // Make settingsUI globally accessible for modal button onclick handlers
+      window.settingsUI = settingsUI;
+
+      // Initialize settings UI
+      settingsUI.initialize();
+
+      // Attempt to connect to QZ Tray (non-blocking)
+      printerManager.initialize().catch(err => {
+        console.warn('[App] QZ Tray initialization failed (non-fatal):', err);
+      });
+
+      console.log('[App] Print management modules initialized');
+    } catch (error) {
+      console.warn('[App] Print management initialization failed (non-fatal):', error);
+      // App continues to work in download-only mode
+    }
 
     // Set up event listeners
     setupEventListeners();
@@ -233,6 +265,98 @@ function setupEventListeners() {
       });
     }
   });
+
+  // Print Management buttons (only add if modules initialized)
+  if (settingsUI && printRouter && pdfGenerator) {
+    // Settings button
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', () => {
+        try {
+          settingsUI.open();
+        } catch (error) {
+          ErrorHandler.logError(error, 'EventListener:settings-btn', {
+            category: 'EVENT_ERROR',
+            userMessage: 'Failed to open settings. Please try again.'
+          });
+        }
+      });
+    }
+
+    // Print buttons
+    const printBigBtn = document.getElementById('print-big-btn');
+    const printSmallBtn = document.getElementById('print-small-btn');
+    const printBothBtn = document.getElementById('print-both-btn');
+
+    if (printBigBtn) {
+      printBigBtn.addEventListener('click', () => {
+        try {
+          handlePrintBig();
+        } catch (error) {
+          ErrorHandler.logError(error, 'EventListener:print-big-btn', {
+            category: 'EVENT_ERROR',
+            userMessage: 'Failed to print BIG stickers. Please try again.'
+          });
+        }
+      });
+    }
+
+    if (printSmallBtn) {
+      printSmallBtn.addEventListener('click', () => {
+        try {
+          handlePrintSmall();
+        } catch (error) {
+          ErrorHandler.logError(error, 'EventListener:print-small-btn', {
+            category: 'EVENT_ERROR',
+            userMessage: 'Failed to print SMALL stickers. Please try again.'
+          });
+        }
+      });
+    }
+
+    if (printBothBtn) {
+      printBothBtn.addEventListener('click', () => {
+        try {
+          handlePrintBoth();
+        } catch (error) {
+          ErrorHandler.logError(error, 'EventListener:print-both-btn', {
+            category: 'EVENT_ERROR',
+            userMessage: 'Failed to print stickers. Please try again.'
+          });
+        }
+      });
+    }
+
+    // PDF buttons
+    const pdfBigBtn = document.getElementById('pdf-big-btn');
+    const pdfSmallBtn = document.getElementById('pdf-small-btn');
+
+    if (pdfBigBtn) {
+      pdfBigBtn.addEventListener('click', () => {
+        try {
+          handlePdfBig();
+        } catch (error) {
+          ErrorHandler.logError(error, 'EventListener:pdf-big-btn', {
+            category: 'EVENT_ERROR',
+            userMessage: 'Failed to generate PDF. Please try again.'
+          });
+        }
+      });
+    }
+
+    if (pdfSmallBtn) {
+      pdfSmallBtn.addEventListener('click', () => {
+        try {
+          handlePdfSmall();
+        } catch (error) {
+          ErrorHandler.logError(error, 'EventListener:pdf-small-btn', {
+            category: 'EVENT_ERROR',
+            userMessage: 'Failed to generate PDF. Please try again.'
+          });
+        }
+      });
+    }
+  }
 
   // Bulk paste button
   const bulkProcessBtn = ErrorHandler.validateElement('#bulk-process-btn', 'setupEventListeners');
@@ -679,9 +803,31 @@ function updateCartSummary() {
 
 function updateDownloadButtons() {
   const isEmpty = cart.isEmpty();
+
+  // Update download buttons
   document.getElementById('download-big-btn').disabled = isEmpty;
   document.getElementById('download-small-btn').disabled = isEmpty;
   document.getElementById('download-both-btn').disabled = isEmpty;
+
+  // Update print and PDF buttons (if they exist)
+  const printBigBtn = document.getElementById('print-big-btn');
+  const printSmallBtn = document.getElementById('print-small-btn');
+  const printBothBtn = document.getElementById('print-both-btn');
+  const pdfBigBtn = document.getElementById('pdf-big-btn');
+  const pdfSmallBtn = document.getElementById('pdf-small-btn');
+
+  // Enable/disable based on cart status and printer configuration
+  const canPrint = printRouter && printRouter.canPrint();
+  const canPrintBig = printRouter && printRouter.canPrintBig();
+  const canPrintSmall = printRouter && printRouter.canPrintSmall();
+
+  if (printBigBtn) printBigBtn.disabled = isEmpty || !canPrintBig;
+  if (printSmallBtn) printSmallBtn.disabled = isEmpty || !canPrintSmall;
+  if (printBothBtn) printBothBtn.disabled = isEmpty || !canPrint;
+
+  // PDF buttons only need cart to have items
+  if (pdfBigBtn) pdfBigBtn.disabled = isEmpty;
+  if (pdfSmallBtn) pdfSmallBtn.disabled = isEmpty;
 }
 
 function handleRemoveItem(itemId) {
@@ -762,6 +908,174 @@ function handleDownloadBoth() {
     showToast('Failed to generate files', 'error');
   }
 }
+
+// ============ PRINT MANAGEMENT FUNCTIONS ============
+
+async function handlePrintBig() {
+  try {
+    if (!printRouter || !printRouter.canPrintBig()) {
+      showToast('Big printer not configured. Use Settings to configure.', 'error');
+      return;
+    }
+
+    showLoading('Printing BIG stickers...');
+    const items = cart.getItems();
+    const { bigZpl, counts } = batchGenerator.generateBatch(items);
+
+    await printRouter.printBig(bigZpl);
+    hideLoading();
+    showToast(`Printed ${counts.big} BIG stickers`, 'success');
+
+  } catch (error) {
+    console.error('Print error:', error);
+    hideLoading();
+    showToast(`Print failed: ${error.message}. Falling back to download.`, 'error');
+
+    // Fallback to download
+    setTimeout(() => handleDownloadBig(), 500);
+  }
+}
+
+async function handlePrintSmall() {
+  try {
+    if (!printRouter || !printRouter.canPrintSmall()) {
+      showToast('Small printer not configured. Use Settings to configure.', 'error');
+      return;
+    }
+
+    showLoading('Printing SMALL stickers...');
+    const items = cart.getItems();
+    const { smallZpl, counts } = batchGenerator.generateBatch(items);
+
+    await printRouter.printSmall(smallZpl);
+    hideLoading();
+    showToast(`Printed ${counts.totalSmall} SMALL stickers`, 'success');
+
+  } catch (error) {
+    console.error('Print error:', error);
+    hideLoading();
+    showToast(`Print failed: ${error.message}. Falling back to download.`, 'error');
+
+    // Fallback to download
+    setTimeout(() => handleDownloadSmall(), 500);
+  }
+}
+
+async function handlePrintBoth() {
+  try {
+    if (!printRouter || !printRouter.canPrint()) {
+      showToast('Both printers must be configured. Use Settings.', 'error');
+      return;
+    }
+
+    showLoading('Printing both label sizes...');
+    const items = cart.getItems();
+    const { bigZpl, smallZpl, counts } = batchGenerator.generateBatch(items);
+
+    await printRouter.printBoth(bigZpl, smallZpl);
+    hideLoading();
+    showToast(`Printed ${counts.big} BIG + ${counts.totalSmall} SMALL stickers`, 'success');
+
+  } catch (error) {
+    console.error('Print error:', error);
+    hideLoading();
+    showToast(`Print failed: ${error.message}. Falling back to download.`, 'error');
+
+    // Fallback to download both
+    setTimeout(() => handleDownloadBoth(), 500);
+  }
+}
+
+async function handlePdfBig() {
+  devLog('App', 'handlePdfBig called');
+
+  try {
+    if (!pdfGenerator) {
+      devError('App', 'PDF generator not available!', new Error('PDF generator not initialized'));
+      showToast('PDF generator not available', 'error');
+      return;
+    }
+
+    devLog('App', 'Showing loading indicator...');
+    showLoading('Generating PDF for BIG stickers...');
+
+    devLog('App', 'Getting cart items...');
+    const items = cart.getItems();
+    devLog('App', 'Cart items retrieved', { 'Item Count': items.length });
+
+    devLog('App', 'Generating batch ZPL...');
+    const { bigZpl, counts } = batchGenerator.generateBatch(items);
+    devLog('App', 'Generated ZPL for BIG labels', {
+      'Label Count': counts.big,
+      'ZPL Length': `${bigZpl.length} characters`
+    });
+
+    const timestamp = BatchZBLGenerator.generateTimestamp();
+    const filename = `job_${timestamp}_BIG`;
+    devLog('App', 'Filename generated', { 'Filename': filename });
+
+    devLog('App', 'Calling pdfGenerator.openInNewTab...');
+    await pdfGenerator.openInNewTab(bigZpl, filename, 'big');
+
+    hideLoading();
+    devLog('App', '✓ Label opened successfully');
+    showToast('Label opened in new tab', 'success');
+
+  } catch (error) {
+    devError('App', '✗ PDF generation error', error);
+    hideLoading();
+    showToast('PDF generation failed', 'error');
+  }
+}
+
+async function handlePdfSmall() {
+  devLog('App', 'handlePdfSmall called');
+
+  try {
+    if (!pdfGenerator) {
+      devError('App', 'PDF generator not available!', new Error('PDF generator not initialized'));
+      showToast('PDF generator not available', 'error');
+      return;
+    }
+
+    devLog('App', 'Showing loading indicator...');
+    showLoading('Generating PDF for SMALL stickers...');
+
+    devLog('App', 'Getting cart items...');
+    const items = cart.getItems();
+    devLog('App', 'Cart items retrieved', { 'Item Count': items.length });
+
+    devLog('App', 'Generating batch ZPL...');
+    const { smallZpl, counts } = batchGenerator.generateBatch(items);
+    devLog('App', 'Generated ZPL for SMALL labels', {
+      'Label Count': counts.totalSmall,
+      'ZPL Length': `${smallZpl.length} characters`
+    });
+
+    const timestamp = BatchZBLGenerator.generateTimestamp();
+    const filename = `job_${timestamp}_SMALL`;
+    devLog('App', 'Filename generated', { 'Filename': filename });
+
+    devLog('App', 'Calling pdfGenerator.openInNewTab...');
+    await pdfGenerator.openInNewTab(smallZpl, filename, 'small');
+
+    hideLoading();
+    devLog('App', '✓ Label opened successfully');
+    showToast('Label opened in new tab', 'success');
+
+  } catch (error) {
+    devError('App', '✗ PDF generation error', error);
+    hideLoading();
+    showToast('PDF generation failed', 'error');
+  }
+}
+
+// Callback for when printer settings are saved
+window.onPrinterSettingsChanged = function() {
+  // Update button states when printer configuration changes
+  updateDownloadButtons();
+  showToast('Printer settings saved', 'success');
+};
 
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');

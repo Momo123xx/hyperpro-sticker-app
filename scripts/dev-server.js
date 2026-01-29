@@ -217,6 +217,47 @@ const server = Bun.serve({
       return undefined;
     }
 
+    // Handle development debug logging endpoint
+    if (url.pathname === '/dev-log' && req.method === 'POST') {
+      try {
+        const logData = await req.json();
+
+        // Format log for stdout
+        const timestamp = new Date(logData.timestamp).toLocaleString();
+        const separator = '═'.repeat(60);
+
+        console.log('');
+        console.log(separator);
+        console.log(`[${logData.component}] ${logData.message}`);
+        console.log(separator);
+        console.log(`Timestamp: ${timestamp}`);
+
+        if (logData.details && Object.keys(logData.details).length > 0) {
+          Object.entries(logData.details).forEach(([key, value]) => {
+            if (typeof value === 'object') {
+              console.log(`  ${key}: ${JSON.stringify(value, null, 2)}`);
+            } else {
+              console.log(`  ${key}: ${value}`);
+            }
+          });
+        }
+
+        console.log(separator);
+        console.log('');
+
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (logError) {
+        console.error('Failed to process dev log:', logError);
+        return new Response(JSON.stringify({ success: false, error: logError.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // Handle error logging endpoint
     if (url.pathname === '/log-error' && req.method === 'POST') {
       try {

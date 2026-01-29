@@ -67,6 +67,7 @@
         <aside class="cart-sidebar">
           <div class="cart-header">
             <h2>Print Batch</h2>
+            <button id="settings-btn" class="btn-icon" title="Printer Settings">⚙️</button>
             <button id="clear-cart-btn" class="btn-secondary">Clear All</button>
           </div>
 
@@ -94,15 +95,47 @@
           </div>
 
           <div class="cart-actions">
-            <button id="download-big-btn" class="btn-download" disabled>
-              Download BIG Labels (.zpl)
-            </button>
-            <button id="download-small-btn" class="btn-download" disabled>
-              Download SMALL Labels (.zpl)
-            </button>
-            <button id="download-both-btn" class="btn-download-both" disabled>
-              Download All
-            </button>
+            <div class="action-group">
+              <label class="action-label">124x70mm Labels</label>
+              <div class="button-row">
+                <button id="print-big-btn" class="btn-print" disabled title="Print to configured printer">
+                  🖨️ Print
+                </button>
+                <button id="download-big-btn" class="btn-download-small" disabled title="Download as .zpl file">
+                  💾 .zpl
+                </button>
+                <button id="pdf-big-btn" class="btn-download-small" disabled title="Download as PDF">
+                  📄 PDF
+                </button>
+              </div>
+            </div>
+
+            <div class="action-group">
+              <label class="action-label">65x35mm Labels</label>
+              <div class="button-row">
+                <button id="print-small-btn" class="btn-print" disabled title="Print to configured printer">
+                  🖨️ Print
+                </button>
+                <button id="download-small-btn" class="btn-download-small" disabled title="Download as .zpl file">
+                  💾 .zpl
+                </button>
+                <button id="pdf-small-btn" class="btn-download-small" disabled title="Download as PDF">
+                  📄 PDF
+                </button>
+              </div>
+            </div>
+
+            <div class="action-group">
+              <label class="action-label">Combined Actions</label>
+              <div class="button-row">
+                <button id="print-both-btn" class="btn-print-both" disabled title="Print both label sizes">
+                  🖨️ Print All
+                </button>
+                <button id="download-both-btn" class="btn-download-both" disabled title="Download all as .zpl">
+                  💾 Download All
+                </button>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
@@ -113,8 +146,18 @@
     </footer>
   </div>
 
+  <!-- Settings Modal Container -->
+  <div id="settings-modal" class="modal-overlay" style="display: none;">
+    <!-- Modal content will be rendered by settings-ui.js -->
+  </div>
+
+  <!-- QZ Tray Library (load from CDN or local) -->
+  <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.0/qz-tray.min.js"></script>
+
   <!-- Error handler must load first to capture all errors -->
   <script src="js/error-handler.js"></script>
+  <!-- Development logger for terminal output (localhost only) -->
+  <script src="js/dev-logger.js"></script>
   <!-- Security utilities must load before other modules -->
   <script src="js/security-utils.js"></script>
   <script src="js/excel-parser.js"></script>
@@ -122,6 +165,12 @@
   <script src="js/zbl-generator.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/batch-generator.js"></script>
+  <!-- Print management modules -->
+  <script src="js/settings-storage.js"></script>
+  <script src="js/printer-manager.js"></script>
+  <script src="js/pdf-generator.js"></script>
+  <script src="js/print-router.js"></script>
+  <script src="js/settings-ui.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
